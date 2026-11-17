@@ -5,7 +5,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
+
+import { Chapter } from '../../chapters/entities/chapter.entity';
 
 export enum CourseStatus {
   DRAFT = 'draft',
@@ -42,4 +45,7 @@ export class Course {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(() => Chapter, (chapter) => chapter.course)
+  chapters: Chapter[];
 }

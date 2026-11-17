@@ -47,7 +47,7 @@ async function bootstrap(): Promise<void> {
         'API documentation for the LearnLoop AI learning platform',
       )
       .setVersion('1.0.0')
-      .addBearerAuth(
+.addBearerAuth(
   {
     type: 'http',
     scheme: 'bearer',
@@ -84,6 +84,7 @@ async function bootstrap(): Promise<void> {
 
     process.exitCode = 1;
   }
+  
 }
 
 void bootstrap();

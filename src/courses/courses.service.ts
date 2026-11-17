@@ -88,19 +88,32 @@ export class CoursesService {
 }
 
   // Retrieve one course by ID
-  async findOne(id: number): Promise<Course> {
-    const course = await this.courseRepository.findOne({
-      where: { id },
-    });
+async findOne(id: number): Promise<Course> {
+  const course = await this.courseRepository.findOne({
+    where: { id },
+    relations: {
+      chapters: {
+        lessons: true,
+      },
+    },
+    order: {
+      chapters: {
+        order: 'ASC',
+        lessons: {
+          order: 'ASC',
+        },
+      },
+    },
+  });
 
-    if (!course) {
-      throw new NotFoundException(
-        `Course with ID ${id} not found`,
-      );
-    }
-
-    return course;
+  if (!course) {
+    throw new NotFoundException(
+      `Course with ID ${id} not found`,
+    );
   }
+
+  return course;
+}
 
   // Update a course
   async update(

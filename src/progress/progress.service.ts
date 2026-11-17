@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -26,9 +27,9 @@ export class ProgressService {
 
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
-
   ) {}
 
+  // Mark a lesson as completed
   async markCompleted(
     studentId: number,
     lessonId: number,
@@ -58,10 +59,13 @@ export class ProgressService {
 
     if (existing) {
       if (existing.isCompleted) {
-        throw new ConflictException('Lesson is already completed');
+        throw new ConflictException(
+          'Lesson is already completed',
+        );
       }
 
       existing.isCompleted = true;
+
       return this.progressRepository.save(existing);
     }
 
@@ -74,54 +78,154 @@ export class ProgressService {
     return this.progressRepository.save(progress);
   }
 
-  async getMyProgress(studentId: number): Promise<Progress[]> {
+  // Get logged-in student's progress records
+  async getMyProgress(
+    studentId: number,
+  ): Promise<Progress[]> {
     return this.progressRepository.find({
-      where: { student: { id: studentId } },
-      relations: { lesson: true },
-      order: { updatedAt: 'DESC' },
+      where: {
+        student: { id: studentId },
+      },
+      relations: {
+        lesson: true,
+      },
+      order: {
+        updatedAt: 'DESC',
+      },
     });
   }
 
-  
-
-async getCourseProgressSummary(studentId: number) {
-  const enrollments = await this.enrollmentRepository.find({
-    where: { student: { id: studentId } },
-    relations: { course: true },
-  });
-
-  const summaries = [];
-
-  for (const enrollment of enrollments) {
-    const course = enrollment.course;
-
-    const totalLessons = await this.lessonRepository.count({
-      where: { course: { id: course.id } },
-    });
-
-    const completedLessons = await this.progressRepository.count({
+  // Get logged-in student's course-wise progress
+  async getCourseProgressSummary(studentId: number) {
+    const enrollments = await this.enrollmentRepository.find({
       where: {
         student: { id: studentId },
-        lesson: {
-          course: { id: course.id },
-        },
-        isCompleted: true,
+      },
+      relations: {
+        course: true,
       },
     });
 
-    summaries.push({
-      courseId: course.id,
-      courseTitle: course.title,
-      totalLessons,
-      completedLessons,
-      completionPercentage:
-        totalLessons > 0
-          ? Math.round((completedLessons / totalLessons) * 100)
-          : 0,
-    });
+    const summaries = await Promise.all(
+      enrollments.map(async (enrollment) => {
+        const course = enrollment.course;
+
+        const totalLessons = await this.lessonRepository.count({
+          where: {
+            course: { id: course.id },
+          },
+        });
+
+        const completedLessons =
+          await this.progressRepository.count({
+            where: {
+              student: { id: studentId },
+              lesson: {
+                course: { id: course.id },
+              },
+              isCompleted: true,
+            },
+          });
+
+        return {
+          courseId: course.id,
+          courseTitle: course.title,
+          totalLessons,
+          completedLessons,
+          completionPercentage:
+            totalLessons > 0
+              ? Math.round(
+                  (completedLessons / totalLessons) * 100,
+                )
+              : 0,
+        };
+      }),
+    );
+
+    return summaries;
   }
 
-  return summaries;
-}
+  // Admin: Get progress of all enrolled students
+  async getAllStudentsProgress() {
+    const enrollments = await this.enrollmentRepository.find({
+      relations: {
+        student: true,
+        course: true,
+      },
+      order: {
+        enrolledAt: 'DESC',
+      },
+    });
 
+    const data = await Promise.all(
+      enrollments.map(async (enrollment) => {
+        const student = enrollment.student;
+        const course = enrollment.course;
+
+        const totalLessons = await this.lessonRepository.count({
+          where: {
+            course: { id: course.id },
+          },
+        });
+
+        const completedLessons =
+          await this.progressRepository.count({
+            where: {
+              student: { id: student.id },
+              lesson: {
+                course: { id: course.id },
+              },
+              isCompleted: true,
+            },
+          });
+
+        const completionPercentage =
+          totalLessons > 0
+            ? Math.round(
+                (completedLessons / totalLessons) * 100,
+              )
+            : 0;
+
+        let status:
+          | 'Not Started'
+          | 'In Progress'
+          | 'Completed';
+
+        if (completedLessons === 0) {
+          status = 'Not Started';
+        } else if (
+          totalLessons > 0 &&
+          completedLessons >= totalLessons
+        ) {
+          status = 'Completed';
+        } else {
+          status = 'In Progress';
+        }
+
+        return {
+          student: {
+            id: student.id,
+            name: student.name,
+            email: student.email,
+          },
+
+          course: {
+            id: course.id,
+            title: course.title,
+          },
+
+          enrolledAt: enrollment.enrolledAt,
+          totalLessons,
+          completedLessons,
+          completionPercentage,
+          status,
+        };
+      }),
+    );
+
+    return {
+      totalEnrollments: data.length,
+      data,
+    };
+  }
 }
