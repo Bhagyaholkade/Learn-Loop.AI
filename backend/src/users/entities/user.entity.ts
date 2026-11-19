@@ -38,4 +38,20 @@ export class User {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ default: false })
+isEmailVerified: boolean;
+
+@Column({ type: 'varchar', nullable: true, select: false })
+emailVerificationToken: string | null;
+
+@Column({ type: 'datetime', nullable: true, select: false })
+emailVerificationExpiresAt: Date | null;
+
+@Column({ type: 'varchar', nullable: true, select: false })
+passwordResetToken: string | null;
+
+@Column({ type: 'datetime', nullable: true, select: false })
+passwordResetExpiresAt: Date | null;
+
 }

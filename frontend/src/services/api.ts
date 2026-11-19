@@ -33,6 +33,19 @@ export interface SignupResponse {
   user: AuthUser;
 }
 
+export interface AuthMessageResponse {
+  message: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+}
+
 // ==================== STUDENT TYPES ====================
 
 export interface Student {
@@ -75,10 +88,33 @@ export interface Enrollment {
   enrolledAt?: string;
 }
 
+// ==================== AUTH STORAGE HELPERS ====================
+
+function getAuthStorage(): Storage | null {
+  if (localStorage.getItem('accessToken')) {
+    return localStorage;
+  }
+
+  if (sessionStorage.getItem('accessToken')) {
+    return sessionStorage;
+  }
+
+  return null;
+}
+
+function clearAuthStorage(): void {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('user');
+
+  sessionStorage.removeItem('accessToken');
+  sessionStorage.removeItem('user');
+}
+
 // ==================== AUTH API ====================
 
 export async function login(
   credentials: LoginRequest,
+  rememberMe: boolean = false,
 ): Promise<AuthResponse> {
   const response = await api.post<AuthResponse>(
     '/auth/login',
@@ -93,10 +129,18 @@ export async function login(
     );
   }
 
-  localStorage.setItem('accessToken', accessToken);
+  // Clear previous authentication data.
+  clearAuthStorage();
+
+  // Store authentication based on Remember Me selection.
+  const storage: Storage = rememberMe
+    ? localStorage
+    : sessionStorage;
+
+  storage.setItem('accessToken', accessToken);
 
   if (user) {
-    localStorage.setItem('user', JSON.stringify(user));
+    storage.setItem('user', JSON.stringify(user));
   }
 
   return response.data;
@@ -117,13 +161,22 @@ export async function signup(
   return response.data;
 }
 
+// ==================== LOGOUT ====================
+
 export function logout(): void {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('user');
+  clearAuthStorage();
 }
 
+// ==================== CURRENT USER ====================
+
 export function getCurrentUser(): AuthUser | null {
-  const user = localStorage.getItem('user');
+  const storage = getAuthStorage();
+
+  if (!storage) {
+    return null;
+  }
+
+  const user = storage.getItem('user');
 
   if (!user) {
     return null;
@@ -132,13 +185,56 @@ export function getCurrentUser(): AuthUser | null {
   try {
     return JSON.parse(user) as AuthUser;
   } catch {
-    localStorage.removeItem('user');
+    storage.removeItem('user');
     return null;
   }
 }
 
+// ==================== AUTHENTICATION STATUS ====================
+
 export function isAuthenticated(): boolean {
-  return Boolean(localStorage.getItem('accessToken'));
+  return getAuthStorage() !== null;
+}
+
+// ==================== EMAIL VERIFICATION ====================
+
+export async function verifyEmail(
+  token: string,
+): Promise<AuthMessageResponse> {
+  const response = await api.get<AuthMessageResponse>(
+    '/auth/verify-email',
+    {
+      params: { token },
+    },
+  );
+
+  return response.data;
+}
+
+// ==================== FORGOT PASSWORD ====================
+
+export async function forgotPassword(
+  data: ForgotPasswordRequest,
+): Promise<AuthMessageResponse> {
+  const response = await api.post<AuthMessageResponse>(
+    '/auth/forgot-password',
+    data,
+  );
+
+  return response.data;
+}
+
+// ==================== RESET PASSWORD ====================
+
+export async function resetPassword(
+  data: ResetPasswordRequest,
+): Promise<AuthMessageResponse> {
+  const response = await api.post<AuthMessageResponse>(
+    '/auth/reset-password',
+    data,
+  );
+
+  return response.data;
 }
 
 // ==================== STUDENTS API ====================
@@ -234,11 +330,7 @@ function extractEnrollments(
     return null;
   }
 
-  for (const key of [
-    'data',
-    'enrollments',
-    'items',
-  ]) {
+  for (const key of ['data', 'enrollments', 'items']) {
     const value = result[key];
 
     if (Array.isArray(value)) {

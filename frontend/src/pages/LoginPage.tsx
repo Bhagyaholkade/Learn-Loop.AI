@@ -31,13 +31,64 @@ import {
   getApiErrorMessage,
 } from '../services/api';
 
+const REMEMBERED_EMAIL_KEY = 'learnloop.rememberedEmail';
+
+function readRememberedEmail(): string {
+  try {
+    return localStorage.getItem(REMEMBERED_EMAIL_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function saveRememberMe(remember: boolean, email: string) {
+  try {
+    if (remember) {
+      localStorage.setItem(REMEMBERED_EMAIL_KEY, email);
+    } else {
+      localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+    }
+  } catch {
+    // Storage unavailable (private mode etc.) - ignore.
+  }
+}
+
+/**
+ * Ask the browser's password manager to save the credentials.
+ * The password is never stored by the app itself - only by the browser.
+ * Supported in Chromium browsers; silently skipped elsewhere.
+ */
+async function storeBrowserCredential(email: string, password: string) {
+  const PasswordCredentialCtor = (
+    window as unknown as {
+      PasswordCredential?: new (data: {
+        id: string;
+        password: string;
+        name?: string;
+      }) => Credential;
+    }
+  ).PasswordCredential;
+
+  if (!PasswordCredentialCtor || !navigator.credentials?.store) return;
+
+  try {
+    await navigator.credentials.store(
+      new PasswordCredentialCtor({ id: email, password, name: email }),
+    );
+  } catch {
+    // User dismissed the prompt or the browser refused - ignore.
+  }
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(readRememberedEmail);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(
+    () => readRememberedEmail() !== '',
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -59,6 +110,12 @@ export default function LoginPage() {
         email: email.trim(),
         password,
       });
+
+      saveRememberMe(rememberMe, email.trim());
+
+      if (rememberMe) {
+        await storeBrowserCredential(email.trim(), password);
+      }
 
       // The login API saves the token and user in localStorage.
       // Use the actual role returned by the backend.
@@ -237,6 +294,8 @@ export default function LoginPage() {
               <TextField
                 fullWidth
                 type="email"
+                id="email"
+                name="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
@@ -281,6 +340,8 @@ export default function LoginPage() {
               <TextField
                 fullWidth
                 type={showPassword ? 'text' : 'password'}
+                id="password"
+                name="password"
                 placeholder="Enter your password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}

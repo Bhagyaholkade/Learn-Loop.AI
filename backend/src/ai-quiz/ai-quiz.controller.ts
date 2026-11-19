@@ -21,6 +21,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
+import { GenerateAllChapterQuizzesDto } from './dto/generate-all-chapter-quizzes.dto';
 
 @ApiTags('AI Quiz')
 @ApiBearerAuth('bearer')
@@ -54,4 +55,13 @@ export class AiQuizController {
   ) {
     return this.aiQuizService.generateChapterQuiz(dto);
   }
+
+  // 3. Generate AI quizzes for all chapters in a course
+@Post('generate-all-chapters')
+async generateAllChapterQuizzes(
+  @Body() dto: GenerateAllChapterQuizzesDto,
+) {
+  return this.aiQuizService.generateAllChapterQuizzes(dto);
+}
+
 }

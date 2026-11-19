@@ -13,6 +13,7 @@ import { Course } from '../../courses/entities/course.entity';
 import { Lesson } from '../../lessons/entities/lesson.entity';
 import { Question } from './question.entity';
 import { QuizAttempt } from './quiz-attempt.entity';
+import { Chapter } from '../../chapters/entities/chapter.entity';
 
 export enum QuizType {
   CHAPTER = 'CHAPTER',
@@ -88,4 +89,12 @@ reviewStatus: QuizReviewStatus;
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+// Chapter association for chapter-wise quizzes
+@ManyToOne(() => Chapter, {
+  nullable: true,
+  onDelete: 'CASCADE',
+})
+chapter: Chapter | null;
+
 }

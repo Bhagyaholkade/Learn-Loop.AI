@@ -12,17 +12,19 @@ import { Enrollment } from '../enrollments/entities/enrollment.entity';
 import { QuizzesService } from './quizzes.service';
 import { QuizzesController } from './quizzes.controller';
 import { StudentQuizzesController } from './student-quizzes.controller';
+import { Chapter } from '../chapters/entities/chapter.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([
-      Quiz,
-      Question,
-      QuizAttempt,
-      Course,
-      Lesson,
-      Enrollment,
-    ]),
+   TypeOrmModule.forFeature([
+  Quiz,
+  Question,
+  QuizAttempt,
+  Course,
+  Lesson,
+  Enrollment,
+  Chapter,
+]),
   ],
   controllers: [
     QuizzesController,

@@ -1,126 +1,196 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+<div align="center">
+
+# 🎓 LearnLoop AI
+
+### AI-powered learning platform — create courses, generate quizzes, and track progress in one place.
+
+<p>
+  <img src="https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white" alt="NestJS" />
+  <img src="https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" />
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+  <img src="https://img.shields.io/badge/MUI-007FFF?style=for-the-badge&logo=mui&logoColor=white" alt="Material UI" />
+  <img src="https://img.shields.io/badge/Gemini_AI-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white" alt="Gemini AI" />
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+[Features](#-features) •
+[Tech Stack](#-tech-stack) •
+[Getting Started](#-getting-started) •
+[API Docs](#-api-documentation) •
+[Project Structure](#-project-structure)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+</div>
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## ✨ Overview
 
-## Project setup
+**LearnLoop AI** is a full-stack e-learning platform where admins build courses with the help of AI and students learn, take quizzes, and earn certificates. Course outlines, lesson content, and chapter quizzes can be generated automatically, so a full course can be ready in minutes.
 
+---
+
+## 🚀 Features
+
+### 🤖 AI-Powered
+| Feature | Description |
+| --- | --- |
+| **AI Course Creator** | Generate full course outlines and lesson content from a topic |
+| **AI Quiz Generator** | Create quizzes for one chapter or every chapter at once |
+| **Multi-provider fallback** | Google Gemini → Groq → OpenRouter, so generation keeps working if one provider fails |
+| **Draft & review** | Review, edit, and approve AI drafts before publishing |
+
+### 👨‍🎓 For Students
+- 📚 Browse and enroll in courses
+- 📖 Step-by-step lessons organized by chapters
+- 📝 Timed quizzes with instant results and answer explanations
+- 📈 Personal progress tracking
+- 🔖 Bookmarks and ⭐ course reviews
+- 🏆 Certificates on course completion
+
+### 🛠️ For Admins
+- 🗂️ Manage courses, chapters, lessons, and enrollments
+- 👥 Manage students
+- 🧠 Create, review, and manage quizzes and questions
+- 📊 Analytics dashboard, quiz attempts, and progress reports
+
+### 🔐 Security & Accounts
+- JWT authentication with role-based access (Admin / Student)
+- Email verification and password reset (SMTP or Resend)
+- Password hashing with bcrypt
+- Global request validation and error handling
+
+---
+
+## 🧰 Tech Stack
+
+| Layer | Technology |
+| --- | --- |
+| **Frontend** | React 19, TypeScript, Vite, Material UI, React Router, Axios |
+| **Backend** | NestJS, TypeScript, TypeORM, Passport JWT, class-validator |
+| **Database** | MySQL with TypeORM migrations |
+| **AI** | Google Gemini, Groq, OpenRouter |
+| **Email** | Nodemailer (SMTP), Resend |
+| **API Docs** | Swagger / OpenAPI |
+
+---
+
+## ⚡ Getting Started
+
+### Prerequisites
+- **Node.js** 20 or newer
+- **MySQL** 8 or newer
+- An API key for **Google Gemini** (Groq and OpenRouter are optional fallbacks)
+
+### 1️⃣ Clone the repository
 ```bash
-$ npm install
+git clone https://github.com/Bhagyaholkade/Learn-Loop.AI.git
+cd Learn-Loop.AI
 ```
 
-## Compile and run the project
-
+### 2️⃣ Set up the backend
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+cd backend
+npm install
+cp .env.example .env      # then fill in your values
+npm run migration:run     # create database tables
+npm run start:dev         # http://localhost:3002
 ```
 
-## Run tests
-
+### 3️⃣ Set up the frontend
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cd frontend
+npm install
+npm run dev               # http://localhost:5173
 ```
 
-## Deployment
+> 💡 The frontend calls the API at `http://localhost:3002/api/v1` by default.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+---
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 🔑 Environment Variables
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+Copy `backend/.env.example` to `backend/.env` and fill in:
+
+| Variable | Description |
+| --- | --- |
+| `PORT` | Backend port (default `3002`) |
+| `FRONTEND_URL` | Allowed CORS origin (default `http://localhost:5173`) |
+| `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE` | MySQL connection |
+| `JWT_SECRET` | Secret used to sign JWT tokens |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | Google Gemini settings |
+| `GROQ_API_KEY`, `OPENROUTER_API_KEY` | Optional AI fallbacks |
+| `MAIL_PROVIDER`, `MAIL_*`, `RESEND_API_KEY` | Email settings |
+
+> ⚠️ Never commit your real `.env` file.
+
+---
+
+## 📘 API Documentation
+
+With the backend running, open the interactive Swagger docs:
+
+**👉 http://localhost:3002/api/docs**
+
+All endpoints use the base path `/api/v1`. Click **Authorize** in Swagger and paste a JWT token to try protected routes.
+
+---
+
+## 📂 Project Structure
+
+```
+Learn-Loop.AI/
+├── backend/                 # NestJS REST API
+│   └── src/
+│       ├── ai-course/       # AI course outline & lesson generation
+│       ├── ai-quiz/         # AI quiz generation (Gemini/Groq/OpenRouter)
+│       ├── auth/            # JWT auth, roles, password reset
+│       ├── email/           # Email service & templates
+│       ├── courses/         # Courses
+│       ├── chapters/        # Chapters
+│       ├── lessons/         # Lessons
+│       ├── quizzes/         # Quizzes, questions & attempts
+│       ├── enrollments/     # Enrollments
+│       ├── progress/        # Learning progress
+│       ├── certificates/    # Certificates
+│       ├── bookmarks/       # Bookmarks
+│       ├── reviews/         # Course reviews
+│       ├── students/        # Student management
+│       ├── users/           # Users
+│       └── migrations/      # Database migrations
+│
+└── frontend/                # React + Vite app
+    └── src/
+        ├── api/             # API clients
+        ├── components/      # Shared components
+        ├── pages/           # Student & admin pages
+        └── types/           # TypeScript types
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+---
 
-## Observability
+## 📜 Useful Scripts
 
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
+**Backend** (`/backend`)
+| Command | Description |
+| --- | --- |
+| `npm run start:dev` | Start in watch mode |
+| `npm run build` | Build for production |
+| `npm run start:prod` | Run the production build |
+| `npm run migration:run` | Run database migrations |
+| `npm run test` | Run unit tests |
 
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
+**Frontend** (`/frontend`)
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the dev server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview the production build |
 
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
+---
 
-This project is already instrumented. To connect it, run this and approve the code it prints at [observe.nestjs.com/link](https://observe.nestjs.com/link) - signing up for free if you have no account:
+<div align="center">
 
-```bash
-$ npx @nestjs/observe link
-```
+### ⭐ If you like this project, give it a star!
 
-It writes the app key and secret into `.env` and makes every `nest start` script (`start`, `start:dev`, `start:debug`) load it. In production, set `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` in the environment instead.
-
-Or do it by hand: create an application and an API key at [observe.nestjs.com](https://observe.nestjs.com), and set the pair as `OBSERVE_APP_KEY` and `OBSERVE_APP_SECRET` in the environment the app runs in.
-
-The free plan needs no payment details and covers 300,000 events a month. You can also browse the [live demo](https://www.observe-demo.nestjs.com/dashboard) first - the whole dashboard over a busy service's data, with nothing to install.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observe](https://observe.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+</div>
