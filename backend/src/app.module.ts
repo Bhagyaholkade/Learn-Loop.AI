@@ -22,7 +22,7 @@ import { CertificatesModule } from './certificates/certificates.module';
 import { AiQuizModule } from './ai-quiz/ai-quiz.module';
 import { AiCourseModule } from './ai-course/ai-course.module';
 import { ChaptersModule } from './chapters/chapters.module';
-
+import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
 
 @Module({
   imports: [
@@ -62,6 +62,10 @@ import { ChaptersModule } from './chapters/chapters.module';
     AiQuizModule,
     AiQuizModule,
     AiCourseModule,
+    ChaptersModule,
+    AiQuizModule,
+    AiCourseModule,
+    AiAssistantModule,
     ChaptersModule,
   ],
 

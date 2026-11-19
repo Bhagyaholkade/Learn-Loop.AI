@@ -1,6 +1,7 @@
 
 import { Navigate, Outlet } from 'react-router-dom';
-import { getCurrentUser } from '../services/api';
+import { getCurrentUser, logout } from '../services/api';
+import { getAccessToken } from '../api/axios';
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
@@ -9,7 +10,7 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({
   allowedRoles,
 }: ProtectedRouteProps) {
-  const token = localStorage.getItem('accessToken');
+  const token = getAccessToken();
 
   // Check authentication
   if (!token) {
@@ -20,8 +21,7 @@ export default function ProtectedRoute({
 
   // A protected role-based route requires a valid stored user.
   if (!user || !user.role) {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
+    logout();
 
     return <Navigate to="/login" replace />;
   }

@@ -106,10 +106,13 @@ export default function LoginPage() {
     try {
       setLoading(true);
 
-      const response = await login({
-        email: email.trim(),
-        password,
-      });
+      const response = await login(
+        {
+          email: email.trim(),
+          password,
+        },
+        rememberMe,
+      );
 
       saveRememberMe(rememberMe, email.trim());
 
@@ -121,7 +124,7 @@ export default function LoginPage() {
       // Use the actual role returned by the backend.
       const user = response.user;
 
-      if (user?.role === 'admin') {
+      if (user?.role?.toLowerCase() === 'admin') {
         navigate('/admin', { replace: true });
       } else {
         navigate('/student', { replace: true });

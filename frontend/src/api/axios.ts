@@ -10,8 +10,19 @@ const api = axios.create({
   timeout: 15000,
 });
 
+/**
+ * The token lives in localStorage ("Remember me") or sessionStorage
+ * (normal login), so always check both.
+ */
+export function getAccessToken(): string | null {
+  return (
+    localStorage.getItem('accessToken') ??
+    sessionStorage.getItem('accessToken')
+  );
+}
+
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  const token = getAccessToken();
 
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;

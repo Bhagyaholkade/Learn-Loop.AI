@@ -62,6 +62,7 @@ import {
   getApiErrorMessage,
   type Enrollment,
 } from '../services/api';
+import { getAccessToken } from '../api/axios';
 
 const DRAWER_WIDTH = 192;
 
@@ -137,7 +138,8 @@ type CurrentUser = {
 
 function readStoredUser(): CurrentUser | null {
   try {
-    const storedUser = localStorage.getItem('user');
+    const storedUser =
+      localStorage.getItem('user') ?? sessionStorage.getItem('user');
 
     if (!storedUser) {
       return null;
@@ -342,7 +344,7 @@ function StudentDashboardContent() {
   };
 
   const handleEnroll = async (courseId: number) => {
-    if (!localStorage.getItem('accessToken')) {
+    if (!getAccessToken()) {
       navigate('/login', { replace: true });
       return;
     }
