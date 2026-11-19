@@ -12,6 +12,19 @@ export interface SignupRequest {
   name: string;
   email: string;
   password: string;
+  registrationToken: string;
+}
+
+export interface SendRegistrationOtpResponse {
+  message: string;
+  expiresIn?: number;
+  resendAfter?: number;
+}
+
+export interface VerifyRegistrationOtpResponse {
+  message: string;
+  registrationToken: string;
+  expiresIn?: number;
 }
 
 export interface AuthUser {
@@ -155,7 +168,31 @@ export async function signup(
       name: data.name.trim(),
       email: data.email.trim(),
       password: data.password,
+      registrationToken: data.registrationToken,
     },
+  );
+
+  return response.data;
+}
+
+export async function sendRegistrationOtp(data: {
+  email: string;
+}): Promise<SendRegistrationOtpResponse> {
+  const response = await api.post<SendRegistrationOtpResponse>(
+    '/auth/send-registration-otp',
+    { email: data.email.trim().toLowerCase() },
+  );
+
+  return response.data;
+}
+
+export async function verifyRegistrationOtp(data: {
+  email: string;
+  otp: string;
+}): Promise<VerifyRegistrationOtpResponse> {
+  const response = await api.post<VerifyRegistrationOtpResponse>(
+    '/auth/verify-registration-otp',
+    { email: data.email.trim().toLowerCase(), otp: data.otp },
   );
 
   return response.data;

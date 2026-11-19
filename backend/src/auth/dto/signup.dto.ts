@@ -1,3 +1,4 @@
+
 import {
   IsEmail,
   IsNotEmpty,
@@ -20,4 +21,8 @@ export class SignupDto {
   @MinLength(8)
   @MaxLength(72)
   password: string;
+
+  @IsString()
+  @IsNotEmpty()
+  registrationToken: string;
 }

@@ -13,12 +13,38 @@ import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { SendRegistrationOtpDto } from './dto/send-registration-otp.dto';
+import { VerifyRegistrationOtpDto } from './dto/verify-registration-otp.dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
   ) {}
+
+  // ------------------------------------------
+  // SEND REGISTRATION OTP
+  // POST /api/v1/auth/send-registration-otp
+  // ------------------------------------------
+
+  @Post('send-registration-otp')
+  sendRegistrationOtp(
+    @Body() dto: SendRegistrationOtpDto,
+  ) {
+    return this.authService.sendRegistrationOtp(dto);
+  }
+
+  // ------------------------------------------
+  // VERIFY REGISTRATION OTP
+  // POST /api/v1/auth/verify-registration-otp
+  // ------------------------------------------
+
+  @Post('verify-registration-otp')
+  verifyRegistrationOtp(
+    @Body() dto: VerifyRegistrationOtpDto,
+  ) {
+    return this.authService.verifyRegistrationOtp(dto);
+  }
 
   // ------------------------------------------
   // SIGNUP
@@ -31,7 +57,7 @@ export class AuthController {
   }
 
   // ------------------------------------------
-  // VERIFY EMAIL
+  // LEGACY EMAIL VERIFICATION
   // GET /api/v1/auth/verify-email?token=...
   // ------------------------------------------
 
