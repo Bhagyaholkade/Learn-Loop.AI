@@ -45,7 +45,9 @@
     "openai": "^7.57.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "react-markdown": "^10.1.0",
     "reflect-metadata": "^0.2.2",
+    "remark-gfm": "^4.0.1",
     "resend": "^6.38.1",
     "rxjs": "^7.8.1",
     "typeorm": "^1.1.2"

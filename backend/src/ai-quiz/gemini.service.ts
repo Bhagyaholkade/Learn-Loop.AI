@@ -577,6 +577,68 @@ export class GeminiService {
     }
   }
 
+  /**
+   * Streams text chunks from the primary Gemini model.
+   *
+   * If streaming fails before any text has been sent (overload, quota, a
+   * model on cooldown...), it falls back to generateText(), which goes
+   * through the full fallback chain (fallback model, Groq, OpenRouter), and
+   * yields that whole answer as a single chunk.
+   *
+   * If it fails after text has already been sent, the error is rethrown:
+   * retrying would duplicate the partial answer the client already has.
+   */
+  async *streamText(prompt: string): AsyncGenerator<string> {
+    if (!prompt?.trim()) {
+      throw new BadGatewayException('Prompt cannot be empty');
+    }
+
+    let yieldedAny = false;
+
+    try {
+      const skipError = this.cooldownError(this.model);
+      if (skipError) {
+        throw skipError;
+      }
+
+      const stream = await this.genAI.models.generateContentStream({
+        model: this.model,
+        contents: prompt,
+      });
+
+      for await (const chunk of stream) {
+        const text = chunk.text;
+        if (text) {
+          yieldedAny = true;
+          yield text;
+        }
+      }
+
+      if (yieldedAny) {
+        this.modelCooldowns.delete(this.model);
+        return;
+      }
+      // Empty stream: fall through to the non-streaming fallback chain.
+    } catch (error: any) {
+      if (yieldedAny) {
+        console.error(
+          `Gemini stream (${this.model}) failed mid-response: ${this.describeError(error)}`,
+        );
+        throw this.toHttpException(error);
+      }
+
+      if (!(error instanceof HttpException)) {
+        this.startCooldown(this.model, error);
+      }
+
+      console.warn(
+        `Gemini stream (${this.model}) failed before output; using non-streaming fallback: ${this.describeError(error)}`,
+      );
+    }
+
+    yield await this.generateText(prompt);
+  }
+
   private providerErrorMessage(
     error: any,
     provider: 'Groq' | 'OpenRouter',
