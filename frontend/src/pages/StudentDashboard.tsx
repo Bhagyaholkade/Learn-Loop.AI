@@ -52,9 +52,11 @@ import {
   TrendingUpRounded as TrendingUpRoundedIcon,
   WorkspacePremiumRounded as WorkspacePremiumRoundedIcon,
   PersonRounded as PersonRoundedIcon,
+  AutoAwesomeRounded as AutoAwesomeRoundedIcon,
 } from '@mui/icons-material';
 import StudentCertificatesPage from './StudentCertificatesPage';
 import StudentSettingsPanel from '../components/StudentSettingsPanel';
+import { AiBotLauncher } from '../components/AiBot';
 import { getCourses, type Course } from '../api/courseApi';
 
 import {
@@ -129,7 +131,8 @@ type PageName =
   | 'My Certificates'
   | 'Bookmarks'
   | 'My Profile'
-  | 'Settings';
+  | 'Settings'
+  |'AI Learning Assistant';
 
 type CurrentUser = {
   id?: number | string;
@@ -404,6 +407,11 @@ function StudentDashboardContent() {
       label: 'My Profile',
       icon: <PersonRoundedIcon />,
     },
+
+    {
+  label: 'AI Learning Assistant',
+  icon: <AutoAwesomeRoundedIcon />,
+},
   ];
 
   const getCourseProgress = (courseId: number) =>
@@ -749,12 +757,18 @@ function StudentDashboardContent() {
               key={item.label}
               selected={activePage === item.label}
               onClick={() => {
-                if (item.label === 'Quizzes & Assessments') {
-                  navigate('/student/quizzes');
-                  return;
-                }
-                setActivePage(item.label);
-              }}
+  if (item.label === 'Quizzes & Assessments') {
+    navigate('/student/quizzes');
+    return;
+  }
+
+  if (item.label === 'AI Learning Assistant') {
+    navigate('/student/ai-assistant');
+    return;
+  }
+
+  setActivePage(item.label);
+}}
               sx={{
                 borderRadius: 3,
                 mb: 0.5,
@@ -1012,7 +1026,7 @@ function StudentDashboardContent() {
                   Explore courses
                 </Button>
               </Paper>
-            </>
+              </>
           )}
 
           {error && (
@@ -1219,6 +1233,8 @@ function StudentDashboardContent() {
           </Typography>
         </Container>
       </Box>
+
+      <AiBotLauncher onOpen={() => navigate('/student/ai-assistant')} />
 
       <Snackbar
         open={noticeOpen}

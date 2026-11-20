@@ -38,6 +38,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // AI Course Creator
 import AiCourseCreatorPage from './pages/AiCourseCreatorPage';
+import AiAssistantPage from './pages/AiAssistantPage';
 
 function App() {
   return (
@@ -163,6 +164,11 @@ function App() {
             element={<AdminQuizAttemptsPage />}
           />
         </Route>
+
+        <Route
+  path="/student/ai-assistant"
+  element={<AiAssistantPage />}
+/>
 
         {/* Default Route */}
         <Route
