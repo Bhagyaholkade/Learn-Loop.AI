@@ -1,6 +1,7 @@
 
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ import { Course } from '../courses/entities/course.entity';
 import { Lesson } from '../lessons/entities/lesson.entity';
 import { Enrollment } from '../enrollments/entities/enrollment.entity';
 import { User } from '../users/entities/user.entity';
+import { CertificatesService } from '../certificates/certificates.service';
 
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { UpdateQuizDto } from './dto/update-quiz.dto';
@@ -46,6 +48,8 @@ export class QuizzesService {
 
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
+
+    private readonly certificatesService: CertificatesService,
   ) {}
 
   // ==========================================
@@ -548,6 +552,28 @@ export class QuizzesService {
     }
   }
 
+  // The FINAL quiz unlocks only after every lesson in the course is completed.
+  private async assertFinalQuizUnlocked(
+    quiz: Quiz,
+    studentId: number,
+  ): Promise<void> {
+    if (quiz.quizType !== QuizType.FINAL) {
+      return;
+    }
+
+    const { lessonsCompleted, completedLessons, totalLessons } =
+      await this.certificatesService.getLessonCompletion(
+        studentId,
+        quiz.course.id,
+      );
+
+    if (!lessonsCompleted) {
+      throw new ForbiddenException(
+        `Complete all lessons in this course to unlock the final quiz (${completedLessons}/${totalLessons} completed).`,
+      );
+    }
+  }
+
   // ==========================================
   // STUDENT: QUIZ ACCESS
   // ==========================================
@@ -585,7 +611,28 @@ export class QuizzesService {
       .orderBy('quiz.createdAt', 'DESC')
       .getMany();
 
-    return quizzes.map((quiz) => ({
+    // Lesson completion per course, to show which final quizzes are locked.
+    const completionByCourse = new Map(
+      await Promise.all(
+        courseIds.map(
+          async (courseId) =>
+            [
+              courseId,
+              await this.certificatesService.getLessonCompletion(
+                studentId,
+                courseId,
+              ),
+            ] as const,
+        ),
+      ),
+    );
+
+    return quizzes.map((quiz) => {
+      const completion = completionByCourse.get(quiz.course.id);
+      const isLocked =
+        quiz.quizType === QuizType.FINAL && !completion?.lessonsCompleted;
+
+      return {
       id: quiz.id,
       title: quiz.title,
       description: quiz.description,
@@ -593,6 +640,10 @@ export class QuizzesService {
       totalMarks: quiz.totalMarks,
       passingMarks: quiz.passingMarks,
       quizType: quiz.quizType,
+      isLocked,
+      lockedReason: isLocked
+        ? `Complete all lessons to unlock (${completion?.completedLessons ?? 0}/${completion?.totalLessons ?? 0} done)`
+        : null,
       lesson: quiz.lesson
         ? { id: quiz.lesson.id, title: quiz.lesson.title }
         : null,
@@ -600,7 +651,8 @@ export class QuizzesService {
         id: quiz.course.id,
         title: quiz.course.title,
       },
-    }));
+      };
+    });
   }
 
   // 14. Get quiz questions for a student
@@ -630,6 +682,8 @@ export class QuizzesService {
       studentId,
       quiz.course.id,
     );
+
+    await this.assertFinalQuizUnlocked(quiz, studentId);
 
     return {
       id: quiz.id,
@@ -678,6 +732,8 @@ export class QuizzesService {
       studentId,
       quiz.course.id,
     );
+
+    await this.assertFinalQuizUnlocked(quiz, studentId);
 
     const questions = [...quiz.questions].sort(
       (a, b) => a.order - b.order,
@@ -803,6 +859,15 @@ export class QuizzesService {
     const savedAttempt =
       await this.attemptRepository.save(attempt);
 
+    // Passing the final quiz issues the course certificate automatically.
+    const certificate =
+      isPassed && quiz.quizType === QuizType.FINAL
+        ? await this.certificatesService.tryAutoIssue(
+            studentId,
+            quiz.course.id,
+          )
+        : null;
+
     // Return result and question-wise review
     return {
       message: 'Quiz submitted successfully',
@@ -821,6 +886,15 @@ export class QuizzesService {
 
       isPassed,
       submittedAt: savedAttempt.submittedAt,
+
+      quizType: quiz.quizType,
+      courseId: quiz.course.id,
+      certificate: certificate
+        ? {
+            id: certificate.id,
+            certificateNumber: certificate.certificateNumber,
+          }
+        : null,
 
       questionReview,
     };

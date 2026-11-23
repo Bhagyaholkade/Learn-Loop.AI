@@ -12,6 +12,7 @@ import { Progress } from './entities/progress.entity';
 import { User } from '../users/entities/user.entity';
 import { Lesson } from '../lessons/entities/lesson.entity';
 import { Enrollment } from '../enrollments/entities/enrollment.entity';
+import { CertificatesService } from '../certificates/certificates.service';
 
 @Injectable()
 export class ProgressService {
@@ -27,6 +28,8 @@ export class ProgressService {
 
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
+
+    private readonly certificatesService: CertificatesService,
   ) {}
 
   // Mark a lesson as completed
@@ -44,6 +47,7 @@ export class ProgressService {
 
     const lesson = await this.lessonRepository.findOne({
       where: { id: lessonId },
+      relations: { course: true },
     });
 
     if (!lesson) {
@@ -66,7 +70,9 @@ export class ProgressService {
 
       existing.isCompleted = true;
 
-      return this.progressRepository.save(existing);
+      const updated = await this.progressRepository.save(existing);
+      await this.issueCertificateIfEarned(studentId, lesson);
+      return updated;
     }
 
     const progress = this.progressRepository.create({
@@ -75,7 +81,20 @@ export class ProgressService {
       isCompleted: true,
     });
 
-    return this.progressRepository.save(progress);
+    const saved = await this.progressRepository.save(progress);
+    await this.issueCertificateIfEarned(studentId, lesson);
+    return saved;
+  }
+
+  // Completing the last lesson issues the certificate if the student has
+  // already passed the final quiz (normally the quiz comes after lessons).
+  private async issueCertificateIfEarned(
+    studentId: number,
+    lesson: Lesson,
+  ): Promise<void> {
+    if (lesson.course?.id) {
+      await this.certificatesService.tryAutoIssue(studentId, lesson.course.id);
+    }
   }
 
   // Get logged-in student's progress records

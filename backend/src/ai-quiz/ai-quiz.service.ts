@@ -10,6 +10,8 @@ import { GeminiService } from './gemini.service';
 
 import { GenerateAiQuizDto } from './dto/generate-ai-quiz.dto';
 import { GenerateAllChapterQuizzesDto } from './dto/generate-all-chapter-quizzes.dto';
+import { GenerateFinalQuizDto } from './dto/generate-final-quiz.dto';
+import { buildCourseContentForQuiz } from './course-content.util';
 
 import { Quiz, QuizType } from '../quizzes/entities/quiz.entity';
 import { Question } from '../quizzes/entities/question.entity';
@@ -424,6 +426,167 @@ export class AiQuizService {
       success: results.failed === 0,
       message: 'Chapter quiz generation process completed',
       data: results,
+    };
+  }
+
+  // ==========================================
+  // 3. GENERATE AI FINAL QUIZ FOR A WHOLE COURSE
+  // Passing the final quiz awards the course certificate.
+  // ==========================================
+
+  async generateFinalQuiz(dto: GenerateFinalQuizDto) {
+    const courseRepository = this.dataSource.getRepository(Course);
+    const chapterRepository = this.dataSource.getRepository(Chapter);
+    const quizRepository = this.dataSource.getRepository(Quiz);
+
+    const course = await courseRepository.findOne({
+      where: { id: dto.courseId },
+    });
+
+    if (!course) {
+      throw new NotFoundException(
+        `Course with ID ${dto.courseId} not found`,
+      );
+    }
+
+    // One final quiz per course: it decides the certificate.
+    const existingFinal = await quizRepository.findOne({
+      where: {
+        course: { id: dto.courseId },
+        quizType: QuizType.FINAL,
+      },
+    });
+
+    if (existingFinal) {
+      throw new BadRequestException(
+        `This course already has a final quiz ("${existingFinal.title}", #${existingFinal.id}). Edit or delete it instead of creating another.`,
+      );
+    }
+
+    const totalMarks = dto.numberOfQuestions * dto.marksPerQuestion;
+    const passingMarks =
+      dto.passingMarks ?? Math.ceil(totalMarks * 0.6);
+
+    if (passingMarks > totalMarks) {
+      throw new BadRequestException(
+        'Passing marks cannot exceed total quiz marks',
+      );
+    }
+
+    const durationMinutes = dto.durationMinutes ?? 60;
+
+    const chapters = await chapterRepository.find({
+      where: { course: { id: dto.courseId } },
+      relations: { lessons: true },
+    });
+
+    const { content, objectives, lessonCount } =
+      buildCourseContentForQuiz(chapters);
+
+    if (lessonCount === 0) {
+      throw new BadRequestException(
+        'This course has no lesson content to build a final quiz from',
+      );
+    }
+
+    const instructions = [
+      'This is the FINAL assessment for the whole course.',
+      'Cover every chapter in a balanced way, from foundational concepts to applied understanding.',
+      dto.additionalInstructions?.trim(),
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    const generatedQuiz =
+      await this.geminiService.generateQuizQuestions(
+        `${course.title} - Final Assessment`,
+        content,
+        objectives,
+        dto.numberOfQuestions,
+        dto.marksPerQuestion,
+        instructions,
+      );
+
+    if (
+      !generatedQuiz.questions ||
+      generatedQuiz.questions.length !== dto.numberOfQuestions
+    ) {
+      throw new BadRequestException(
+        'AI generated an unexpected number of questions. Please try again.',
+      );
+    }
+
+    const savedQuiz = await this.dataSource.transaction(
+      async (manager) => {
+        const quizRepo = manager.getRepository(Quiz);
+        const questionRepo = manager.getRepository(Question);
+
+        // Re-check inside the transaction (generation takes a while).
+        const duplicate = await quizRepo.findOne({
+          where: {
+            course: { id: dto.courseId },
+            quizType: QuizType.FINAL,
+          },
+        });
+
+        if (duplicate) {
+          throw new BadRequestException(
+            'A final quiz was created for this course while generating',
+          );
+        }
+
+        const quiz = quizRepo.create({
+          title: dto.title?.trim() || `${course.title} - Final Quiz`,
+          description:
+            'AI-generated final assessment covering the whole course. Pass it to earn the course certificate.',
+          durationMinutes,
+          totalMarks,
+          passingMarks,
+          quizType: QuizType.FINAL,
+          lesson: null,
+          chapter: null,
+          course,
+          isAiGenerated: true,
+          isPublished: false,
+        });
+
+        const saved = await quizRepo.save(quiz);
+
+        await questionRepo.save(
+          generatedQuiz.questions.map((question, index) =>
+            questionRepo.create({
+              questionText: question.questionText,
+              options: question.options,
+              correctOptionIndex: question.correctOptionIndex,
+              marks: question.marks,
+              order: index + 1,
+              explanation: question.explanation,
+              quiz: saved,
+            }),
+          ),
+        );
+
+        return saved;
+      },
+    );
+
+    return {
+      success: true,
+      message:
+        'AI final quiz generated. Review the questions, approve and publish it to enable certificates.',
+      data: {
+        quizId: savedQuiz.id,
+        title: savedQuiz.title,
+        courseId: dto.courseId,
+        quizType: savedQuiz.quizType,
+        isAiGenerated: savedQuiz.isAiGenerated,
+        isPublished: savedQuiz.isPublished,
+        numberOfQuestions: generatedQuiz.questions.length,
+        lessonsCovered: lessonCount,
+        totalMarks,
+        passingMarks,
+        durationMinutes,
+      },
     };
   }
 }
