@@ -1,6 +1,7 @@
 
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
+import { buildDatabaseSsl } from './config/database-ssl';
 
 const dataSource = new DataSource({
   type: 'mysql',
@@ -14,6 +15,8 @@ const dataSource = new DataSource({
   entities: [__dirname + '/**/*.entity{.ts,.js}'],
 
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
+
+  ssl: buildDatabaseSsl(process.env),
 
   synchronize: false,
   migrationsRun: false,
