@@ -69,6 +69,11 @@ export class EmailService implements OnModuleInit {
       port,
       secure,
       auth: { user, pass },
+      // Fail fast instead of hanging for minutes when the SMTP port is
+      // blocked (e.g. Render's free tier blocks outbound SMTP).
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 15_000,
     });
     this.fromEmail =
       this.configService.get<string>('MAIL_FROM') ?? `LearnLoop AI <${user}>`;
