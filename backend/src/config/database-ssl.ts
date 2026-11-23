@@ -1,13 +1,14 @@
+
 /**
  * SSL options for MySQL connections.
  *
- * Hosted MySQL (e.g. Aiven) requires TLS. Set:
+ * Hosted MySQL / TiDB:
  *   DB_SSL=true
- *   DB_SSL_CA=<the provider's CA certificate, PEM>
- * DB_SSL_CA may be pasted with real line breaks or with "\n" escapes
- * (some hosting dashboards only accept a single line).
+ *   DB_SSL_CA=<provider CA certificate in PEM format>
  *
- * Locally (DB_SSL unset) no SSL is used.
+ * DB_SSL_CA supports actual line breaks or escaped "\n".
+ *
+ * Locally, when DB_SSL is unset, SSL is disabled.
  */
 export function buildDatabaseSsl(env: {
   DB_SSL?: string;
@@ -19,7 +20,12 @@ export function buildDatabaseSsl(env: {
 
   const ca = env.DB_SSL_CA?.replace(/\\n/g, '\n').trim();
 
-  // Always verify the server certificate; the CA lets us trust
-  // providers whose certificate is not in the system store.
-  return ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: true };
+  return ca
+    ? {
+        ca,
+        rejectUnauthorized: true,
+      }
+    : {
+        rejectUnauthorized: true,
+      };
 }

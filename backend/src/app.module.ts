@@ -41,7 +41,7 @@ import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
       useFactory: (config: ConfigService) => ({
         type: 'mysql' as const,
         host: config.get<string>('DB_HOST'),
-        port: Number(config.get<string>('DB_PORT', '3306')),
+        port: Number(config.get<string>('DB_PORT', '4000')),
         username: config.get<string>('DB_USERNAME'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_DATABASE'),
