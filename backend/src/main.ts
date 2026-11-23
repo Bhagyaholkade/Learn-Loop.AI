@@ -1,5 +1,6 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import {
   DocumentBuilder,
@@ -13,7 +14,15 @@ async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
 
   try {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+    // Behind a hosting proxy (Render, Railway, ...) set TRUST_PROXY=1 so
+    // req.ip is the visitor's IP. Without it every request appears to come
+    // from the proxy and rate limiting would block all users together.
+    const trustProxy = Number(process.env.TRUST_PROXY ?? 0);
+    if (trustProxy > 0) {
+      app.set('trust proxy', trustProxy);
+    }
 
     // Security headers. CSP is off because this is a JSON API and
     // Swagger UI needs inline scripts.

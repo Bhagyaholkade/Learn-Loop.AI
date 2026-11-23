@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { buildDatabaseSsl } from './config/database-ssl';
 
 // Core application
 import { AppController } from './app.controller';
@@ -40,12 +41,16 @@ import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
       useFactory: (config: ConfigService) => ({
         type: 'mysql' as const,
         host: config.get<string>('DB_HOST'),
-        port: Number(config.get<string>('DB_PORT', '3306')),
+        port: Number(config.get<string>('DB_PORT', '4000')),
         username: config.get<string>('DB_USERNAME'),
         password: config.get<string>('DB_PASSWORD'),
         database: config.get<string>('DB_DATABASE'),
         autoLoadEntities: true,
         synchronize: false,
+        ssl: buildDatabaseSsl({
+          DB_SSL: config.get<string>('DB_SSL'),
+          DB_SSL_CA: config.get<string>('DB_SSL_CA'),
+        }),
       }),
     }),
 
