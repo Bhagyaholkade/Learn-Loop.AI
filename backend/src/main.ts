@@ -82,14 +82,16 @@ async function bootstrap(): Promise<void> {
       },
     });
 
+   
     // 6. Start the server
     const port = Number(process.env.PORT) || 3002;
 
-    await app.listen(port);
+    await app.listen(port, '0.0.0.0');
 
-    logger.log(`LearnLoop AI is running at http://localhost:${port}`);
+    logger.log(`LearnLoop AI is running on port ${port}`);
     logger.log(`API base URL: http://localhost:${port}/api/v1`);
     logger.log(`Swagger docs: http://localhost:${port}/api/docs`);
+
   } catch (error: unknown) {
     logger.error(
       'Failed to start LearnLoop AI',
