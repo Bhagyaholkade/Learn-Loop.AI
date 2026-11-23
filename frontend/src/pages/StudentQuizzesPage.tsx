@@ -248,7 +248,22 @@ export default function StudentQuizzesPage() {
                       variant="outlined"
                       size="small"
                     />
+
+                    {quiz.quizType === 'FINAL' && (
+                      <Chip
+                        label="Final quiz · earns certificate"
+                        color="secondary"
+                        size="small"
+                      />
+                    )}
                   </Stack>
+
+                  {quiz.isLocked && (
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                      {quiz.lockedReason ||
+                        'Complete all lessons to unlock this quiz.'}
+                    </Alert>
+                  )}
 
                   {latestAttempt && (
                     <Box sx={{ mb: 2 }}>
@@ -282,13 +297,14 @@ export default function StudentQuizzesPage() {
                       <Button
                         fullWidth
                         variant="contained"
+                        disabled={Boolean(quiz.isLocked)}
                         onClick={() =>
                           navigate(
                             `/student/quizzes/${quiz.id}/instructions`,
                           )
                         }
                       >
-                        Start Quiz
+                        {quiz.isLocked ? 'Locked' : 'Start Quiz'}
                       </Button>
                     ) : (
                       <Stack spacing={1}>

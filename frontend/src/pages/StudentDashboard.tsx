@@ -1,6 +1,6 @@
 import { appThemeOptions } from '../theme';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import {
   getCourseProgressSummary,
@@ -42,7 +42,6 @@ import {
   LaptopMacRounded as LaptopMacRoundedIcon,
   LogoutRounded as LogoutRoundedIcon,
   MenuBookRounded as MenuBookRoundedIcon,
-  NotificationsNoneRounded as NotificationsNoneRoundedIcon,
   PlayCircleOutlineRounded as PlayCircleOutlineRoundedIcon,
   QuizRounded as QuizRoundedIcon,
   RefreshRounded as RefreshRoundedIcon,
@@ -52,9 +51,18 @@ import {
   TrendingUpRounded as TrendingUpRoundedIcon,
   WorkspacePremiumRounded as WorkspacePremiumRoundedIcon,
   PersonRounded as PersonRoundedIcon,
+  BookmarkRounded as BookmarkRoundedIcon,
+  AutoAwesomeRounded as AutoAwesomeRoundedIcon,
 } from '@mui/icons-material';
 import StudentCertificatesPage from './StudentCertificatesPage';
+import {
+  addBookmark,
+  getMyBookmarks,
+  removeBookmark,
+  type Bookmark,
+} from '../api/bookmarkApi';
 import StudentSettingsPanel from '../components/StudentSettingsPanel';
+import { AiBotLauncher } from '../components/AiBot';
 import { getCourses, type Course } from '../api/courseApi';
 
 import {
@@ -129,7 +137,8 @@ type PageName =
   | 'My Certificates'
   | 'Bookmarks'
   | 'My Profile'
-  | 'Settings';
+  | 'Settings'
+  |'AI Learning Assistant';
 
 type CurrentUser = {
   id?: number | string;
@@ -224,7 +233,13 @@ function StudentDashboardContent() {
 
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [activePage, setActivePage] = useState<PageName>('Dashboard');
+  // Other pages can open a section directly, e.g.
+  // navigate('/student', { state: { page: 'My Certificates' } }).
+  const location = useLocation();
+  const [activePage, setActivePage] = useState<PageName>(
+    () =>
+      (location.state as { page?: PageName } | null)?.page ?? 'Dashboard',
+  );
 
   const [profileMenuAnchor, setProfileMenuAnchor] =
     useState<HTMLElement | null>(null);
@@ -241,6 +256,20 @@ function StudentDashboardContent() {
   const [courseProgress, setCourseProgress] = useState<
   CourseProgressSummary[]
 >([]);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [bookmarkBusyCourseId, setBookmarkBusyCourseId] = useState<
+    number | null
+  >(null);
+
+  const loadBookmarks = useCallback(async () => {
+    try {
+      setBookmarks(await getMyBookmarks());
+    } catch (bookmarkError) {
+      // Bookmarks are optional and should not block the dashboard.
+      console.error('Failed to load bookmarks:', bookmarkError);
+      setBookmarks([]);
+    }
+  }, []);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -280,12 +309,14 @@ function StudentDashboardContent() {
         console.error('Failed to load course progress:', progressError);
         setCourseProgress([]);
       }
+
+      await loadBookmarks();
     } catch (err: unknown) {
       setError(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadBookmarks]);
 
   useEffect(() => {
     void loadDashboard();
@@ -301,6 +332,38 @@ function StudentDashboardContent() {
   const enrolledCourseIds = useMemo(() => {
     return new Set(enrolledCourses.map((course) => course.id));
   }, [enrolledCourses]);
+
+  const bookmarkByCourseId = useMemo(() => {
+    const map = new Map<number, Bookmark>();
+    bookmarks.forEach((bookmark) => {
+      if (bookmark.course?.id) map.set(bookmark.course.id, bookmark);
+    });
+    return map;
+  }, [bookmarks]);
+
+  const handleToggleBookmark = async (courseId: number) => {
+    setBookmarkBusyCourseId(courseId);
+    setError('');
+
+    try {
+      const existing = bookmarkByCourseId.get(courseId);
+
+      if (existing) {
+        await removeBookmark(existing.id);
+        setNotice('Removed from bookmarks.');
+      } else {
+        await addBookmark(courseId);
+        setNotice('Course bookmarked.');
+      }
+
+      setNoticeOpen(true);
+      await loadBookmarks();
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err));
+    } finally {
+      setBookmarkBusyCourseId(null);
+    }
+  };
 
   const publishedCourses = useMemo(() => {
     return courses.filter(
@@ -404,6 +467,11 @@ function StudentDashboardContent() {
       label: 'My Profile',
       icon: <PersonRoundedIcon />,
     },
+
+    {
+  label: 'AI Learning Assistant',
+  icon: <AutoAwesomeRoundedIcon />,
+},
   ];
 
   const getCourseProgress = (courseId: number) =>
@@ -437,8 +505,35 @@ function StudentDashboardContent() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
+            position: 'relative',
           }}
         >
+          <Tooltip
+            title={
+              bookmarkByCourseId.has(course.id)
+                ? 'Remove bookmark'
+                : 'Bookmark course'
+            }
+          >
+            <span style={{ position: 'absolute', top: 6, right: 6 }}>
+              <IconButton
+                size="small"
+                aria-label="Toggle bookmark"
+                disabled={bookmarkBusyCourseId === course.id}
+                onClick={() => void handleToggleBookmark(course.id)}
+                sx={{
+                  bgcolor: 'rgba(255,255,255,0.85)',
+                  '&:hover': { bgcolor: '#FFFFFF' },
+                }}
+              >
+                {bookmarkByCourseId.has(course.id) ? (
+                  <BookmarkRoundedIcon fontSize="small" color="primary" />
+                ) : (
+                  <BookmarkBorderRoundedIcon fontSize="small" />
+                )}
+              </IconButton>
+            </span>
+          </Tooltip>
           
           {colors.icon === 'laptop' ? (
             <LaptopMacRoundedIcon
@@ -749,12 +844,18 @@ function StudentDashboardContent() {
               key={item.label}
               selected={activePage === item.label}
               onClick={() => {
-                if (item.label === 'Quizzes & Assessments') {
-                  navigate('/student/quizzes');
-                  return;
-                }
-                setActivePage(item.label);
-              }}
+  if (item.label === 'Quizzes & Assessments') {
+    navigate('/student/quizzes');
+    return;
+  }
+
+  if (item.label === 'AI Learning Assistant') {
+    navigate('/student/ai-assistant');
+    return;
+  }
+
+  setActivePage(item.label);
+}}
               sx={{
                 borderRadius: 3,
                 mb: 0.5,
@@ -855,18 +956,6 @@ function StudentDashboardContent() {
                 aria-label="Explore courses"
               >
                 <SearchRoundedIcon />
-              </IconButton>
-            </Tooltip>
-
-            <Tooltip title="Notifications">
-              <IconButton
-                onClick={() => {
-                  setNotice('You are all caught up.');
-                  setNoticeOpen(true);
-                }}
-                aria-label="Notifications"
-              >
-                <NotificationsNoneRoundedIcon />
               </IconButton>
             </Tooltip>
 
@@ -1012,7 +1101,7 @@ function StudentDashboardContent() {
                   Explore courses
                 </Button>
               </Paper>
-            </>
+              </>
           )}
 
           {error && (
@@ -1064,8 +1153,16 @@ function StudentDashboardContent() {
                   color: '#4F5BD5',
                 },
                 {
-                  label: 'Learning Hours',
-                  value: '—',
+                  // Sum of completed lessons across enrolled courses,
+                  // from the backend progress summary.
+                  label: 'Lessons Completed',
+                  value: loading
+                    ? '—'
+                    : courseProgress.reduce(
+                        (total, progress) =>
+                          total + (Number(progress.completedLessons) || 0),
+                        0,
+                      ),
                   icon: <TrendingUpRoundedIcon />,
                   tint: '#EAF7F0',
                   color: '#1E9E63',
@@ -1141,31 +1238,64 @@ function StudentDashboardContent() {
 ) : activePage === 'My Certificates' ? (
   <StudentCertificatesPage />
 ) : activePage === 'Bookmarks' ? (
-            <Paper
-              variant="outlined"
-              sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}
-            >
-              <BookmarkBorderRoundedIcon
-                sx={{ fontSize: 42, color: 'text.secondary' }}
-              />
-
-              <Typography variant="h6" sx={{ mt: 1 }}>
-                Bookmarks
-              </Typography>
-
-              <Typography color="text.secondary" sx={{ mt: 1 }}>
-                Bookmark functionality will appear here when the bookmarks API
-                is connected.
-              </Typography>
-
-              <Button
-                variant="contained"
-                sx={{ mt: 2 }}
-                onClick={() => setActivePage('Explore Courses')}
+            bookmarks.length === 0 ? (
+              <Paper
+                variant="outlined"
+                sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}
               >
-                Explore courses
-              </Button>
-            </Paper>
+                <BookmarkBorderRoundedIcon
+                  sx={{ fontSize: 42, color: 'text.secondary' }}
+                />
+
+                <Typography variant="h6" sx={{ mt: 1 }}>
+                  No bookmarks yet
+                </Typography>
+
+                <Typography color="text.secondary" sx={{ mt: 1 }}>
+                  Tap the bookmark icon on any course card, or use the
+                  Bookmark course button on a course or lesson page.
+                </Typography>
+
+                <Button
+                  variant="contained"
+                  sx={{ mt: 2 }}
+                  onClick={() => setActivePage('Explore Courses')}
+                >
+                  Explore courses
+                </Button>
+              </Paper>
+            ) : (
+              <>
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="h6">Bookmarks</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {bookmarks.length} saved course
+                    {bookmarks.length === 1 ? '' : 's'}
+                  </Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '1fr',
+                      sm: 'repeat(2, minmax(0, 1fr))',
+                      lg: 'repeat(3, minmax(0, 1fr))',
+                    },
+                    gap: 2,
+                  }}
+                >
+                  {bookmarks
+                    .filter((bookmark) => bookmark.course)
+                    .map((bookmark) =>
+                      renderCourseCard(
+                        bookmark.course,
+                        enrolledCourseIds.has(bookmark.course.id),
+                      ),
+                    )}
+                </Box>
+              </>
+            )
           ) : activePage === 'Settings' ? (
             <StudentSettingsPanel
               name={currentUser?.name || studentName}
@@ -1219,6 +1349,8 @@ function StudentDashboardContent() {
           </Typography>
         </Container>
       </Box>
+
+      <AiBotLauncher onOpen={() => navigate('/student/ai-assistant')} />
 
       <Snackbar
         open={noticeOpen}

@@ -13,6 +13,12 @@ export interface CertificateEligibility {
   quizzesPassed: boolean;
   eligible: boolean;
   message: string;
+  /** Only published FINAL quizzes count (totalQuizzes/passedQuizzes too). */
+  hasFinalQuiz?: boolean;
+  /** The final quiz the student still needs to pass, if any. */
+  finalQuiz?: { id: number; title: string } | null;
+  nextStep?: 'COMPLETE_LESSONS' | 'NO_FINAL_QUIZ' | 'TAKE_FINAL_QUIZ' | 'CERTIFIED';
+  certificate?: { id: number; certificateNumber: string } | null;
 }
 
 export interface CertificateCourse {

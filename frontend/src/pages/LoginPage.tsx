@@ -56,6 +56,8 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState(signupState?.email ?? '');
   const [successMessage] = useState(signupState?.message ?? '');
+  const sessionExpired =
+    new URLSearchParams(location.search).get('expired') === '1';
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -152,6 +154,12 @@ export default function LoginPage() {
             {successMessage && !error && (
               <Alert severity="success" sx={alertSx}>
                 {successMessage}
+              </Alert>
+            )}
+
+            {sessionExpired && !successMessage && !error && (
+              <Alert severity="info" sx={alertSx}>
+                Your session has expired. Please sign in again.
               </Alert>
             )}
 

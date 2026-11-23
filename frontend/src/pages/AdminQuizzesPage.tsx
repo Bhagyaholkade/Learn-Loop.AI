@@ -31,6 +31,7 @@ import api from '../api/axios';
 import {
   approveQuiz,
   createQuiz,
+  generateAiFinalQuiz,
   generateAiQuiz,
   getAllAdminQuizzes,
   publishQuiz,
@@ -40,6 +41,7 @@ import {
 import type {
   AdminQuiz,
   CreateQuizData,
+  GenerateAiFinalQuizData,
   GenerateAiQuizData,
 } from '../api/adminQuizzesApi';
 
@@ -55,6 +57,18 @@ const initialForm: CreateQuizData = {
   durationMinutes: 30,
   totalMarks: 10,
   passingMarks: 4,
+  // Final assessments award the course certificate when passed.
+  quizType: 'FINAL',
+};
+
+const initialFinalAiForm: GenerateAiFinalQuizData = {
+  courseId: 0,
+  title: '',
+  numberOfQuestions: 20,
+  marksPerQuestion: 1,
+  durationMinutes: 60,
+  passingMarks: 12,
+  additionalInstructions: '',
 };
 
 interface GenerateAllChapterQuizzesData {
@@ -154,6 +168,10 @@ export default function AdminQuizzesPage() {
 
   const [form, setForm] = useState<CreateQuizData>(initialForm);
   const [aiForm, setAiForm] = useState<GenerateAiQuizData>(initialAiForm);
+  const [finalAiDialogOpen, setFinalAiDialogOpen] = useState(false);
+  const [finalAiForm, setFinalAiForm] =
+    useState<GenerateAiFinalQuizData>(initialFinalAiForm);
+  const [finalAiSaving, setFinalAiSaving] = useState(false);
 
   const fetchQuizzes = useCallback(async (showLoader = false) => {
     try {
@@ -206,11 +224,95 @@ export default function AdminQuizzesPage() {
   ).length;
   const draftQuizzes = quizzes.filter((quiz) => !quiz.isPublished).length;
 
+  // Certificates need one published FINAL quiz per course.
+  const courseHasFinalQuiz = (courseId: number) =>
+    quizzes.some(
+      (quiz) => quiz.course?.id === courseId && quiz.quizType === 'FINAL',
+    );
+  const coursesWithoutPublishedFinal = courses.filter(
+    (course) =>
+      !quizzes.some(
+        (quiz) =>
+          quiz.course?.id === course.id &&
+          quiz.quizType === 'FINAL' &&
+          quiz.isPublished,
+      ),
+  );
+
+  const handleGenerateFinalQuiz = async () => {
+    const totalMarks =
+      finalAiForm.numberOfQuestions * finalAiForm.marksPerQuestion;
+
+    if (!finalAiForm.courseId) {
+      setFormError('Please select a course.');
+      return;
+    }
+
+    if (
+      !Number.isInteger(finalAiForm.numberOfQuestions) ||
+      finalAiForm.numberOfQuestions < 1 ||
+      finalAiForm.numberOfQuestions > 50 ||
+      !Number.isInteger(finalAiForm.marksPerQuestion) ||
+      finalAiForm.marksPerQuestion < 1 ||
+      finalAiForm.marksPerQuestion > 10
+    ) {
+      setFormError('Question count must be 1–50 and marks per question 1–10.');
+      return;
+    }
+
+    if (
+      !finalAiForm.durationMinutes ||
+      finalAiForm.durationMinutes < 1 ||
+      finalAiForm.durationMinutes > 300
+    ) {
+      setFormError('Duration must be between 1 and 300 minutes.');
+      return;
+    }
+
+    if (
+      finalAiForm.passingMarks === undefined ||
+      finalAiForm.passingMarks < 0 ||
+      finalAiForm.passingMarks > totalMarks
+    ) {
+      setFormError(`Passing marks must be between 0 and ${totalMarks}.`);
+      return;
+    }
+
+    try {
+      setFinalAiSaving(true);
+      setFormError('');
+      setError('');
+
+      const response = await generateAiFinalQuiz({
+        ...finalAiForm,
+        title: finalAiForm.title?.trim() || undefined,
+        additionalInstructions:
+          finalAiForm.additionalInstructions?.trim() || undefined,
+      });
+
+      setFinalAiDialogOpen(false);
+      setFinalAiForm(initialFinalAiForm);
+      setSuccess(
+        `${response.message} Quiz: "${response.data.title}".`,
+      );
+      await fetchQuizzes();
+    } catch (err) {
+      setFormError(getErrorMessage(err));
+    } finally {
+      setFinalAiSaving(false);
+    }
+  };
+
 
 
   const handleCreateQuiz = async () => {
     if (!form.title.trim() || !form.courseId) {
       setFormError('Please enter a title and select a course.');
+      return;
+    }
+
+    if (form.quizType === 'CHAPTER' && !form.lessonId) {
+      setFormError('Please select the lesson this chapter quiz belongs to.');
       return;
     }
 
@@ -232,6 +334,7 @@ export default function AdminQuizzesPage() {
         ...form,
         title: form.title.trim(),
         description: form.description?.trim() || undefined,
+        lessonId: form.quizType === 'CHAPTER' ? form.lessonId : undefined,
       });
 
       setDialogOpen(false);
@@ -527,6 +630,19 @@ export default function AdminQuizzesPage() {
 
           <Button
             variant="contained"
+            color="success"
+            onClick={() => {
+              setFinalAiForm(initialFinalAiForm);
+              setFormError('');
+              setFinalAiDialogOpen(true);
+            }}
+            disabled={coursesLoading || courses.length === 0}
+          >
+            Generate AI Final Quiz
+          </Button>
+
+          <Button
+            variant="contained"
             onClick={() => {
               setForm(initialForm);
               setFormError('');
@@ -541,6 +657,19 @@ export default function AdminQuizzesPage() {
 
       {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
+
+      {!coursesLoading && coursesWithoutPublishedFinal.length > 0 && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          <strong>
+            {coursesWithoutPublishedFinal.length} course
+            {coursesWithoutPublishedFinal.length === 1 ? '' : 's'} cannot award
+            certificates yet
+          </strong>{' '}
+          (no published final quiz):{' '}
+          {coursesWithoutPublishedFinal.map((course) => course.title).join(', ')}.
+          Use &quot;Generate AI Final Quiz&quot;, then approve and publish it.
+        </Alert>
+      )}
 
       <Grid container spacing={2} mb={4}>
         {[
@@ -1109,6 +1238,173 @@ export default function AdminQuizzesPage() {
         </DialogActions>
       </Dialog>
 
+      {/* AI Final Quiz Dialog */}
+      <Dialog
+        open={finalAiDialogOpen}
+        onClose={() => !finalAiSaving && setFinalAiDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Generate AI Final Quiz</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2.5} mt={1}>
+            <Alert severity="info">
+              AI writes questions covering every chapter of the course.
+              Students who complete all lessons and pass this quiz get the
+              course certificate automatically. The quiz is created as a
+              draft: review the questions, approve and publish it.
+            </Alert>
+
+            {formError && <Alert severity="error">{formError}</Alert>}
+
+            <FormControl fullWidth required>
+              <InputLabel id="final-course-label">Select Course</InputLabel>
+              <Select<number>
+                labelId="final-course-label"
+                label="Select Course"
+                value={finalAiForm.courseId}
+                onChange={(event) =>
+                  setFinalAiForm((previous) => ({
+                    ...previous,
+                    courseId: Number(event.target.value),
+                  }))
+                }
+              >
+                <MenuItem value={0} disabled>Select a course</MenuItem>
+                {courses.map((course) => (
+                  <MenuItem
+                    key={course.id}
+                    value={course.id}
+                    disabled={courseHasFinalQuiz(course.id)}
+                  >
+                    {course.title}
+                    {courseHasFinalQuiz(course.id) ? ' (already has a final quiz)' : ''}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <TextField
+              label="Quiz Title (optional)"
+              placeholder="Defaults to '<course> - Final Quiz'"
+              value={finalAiForm.title}
+              onChange={(event) =>
+                setFinalAiForm((previous) => ({ ...previous, title: event.target.value }))
+              }
+              fullWidth
+            />
+
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                label="Number of Questions"
+                type="number"
+                value={finalAiForm.numberOfQuestions}
+                onChange={(event) => {
+                  const numberOfQuestions = Number(event.target.value);
+                  setFinalAiForm((previous) => ({
+                    ...previous,
+                    numberOfQuestions,
+                    passingMarks: Math.ceil(
+                      numberOfQuestions * previous.marksPerQuestion * 0.6,
+                    ),
+                  }));
+                }}
+                inputProps={{ min: 1, max: 50 }}
+                fullWidth
+              />
+              <TextField
+                label="Marks per Question"
+                type="number"
+                value={finalAiForm.marksPerQuestion}
+                onChange={(event) => {
+                  const marksPerQuestion = Number(event.target.value);
+                  setFinalAiForm((previous) => ({
+                    ...previous,
+                    marksPerQuestion,
+                    passingMarks: Math.ceil(
+                      previous.numberOfQuestions * marksPerQuestion * 0.6,
+                    ),
+                  }));
+                }}
+                inputProps={{ min: 1, max: 10 }}
+                fullWidth
+              />
+            </Stack>
+
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              <TextField
+                label="Duration (minutes)"
+                type="number"
+                value={finalAiForm.durationMinutes}
+                onChange={(event) =>
+                  setFinalAiForm((previous) => ({
+                    ...previous,
+                    durationMinutes: Number(event.target.value),
+                  }))
+                }
+                inputProps={{ min: 1, max: 300 }}
+                fullWidth
+              />
+              <TextField
+                label="Passing Marks"
+                type="number"
+                value={finalAiForm.passingMarks}
+                onChange={(event) =>
+                  setFinalAiForm((previous) => ({
+                    ...previous,
+                    passingMarks: Number(event.target.value),
+                  }))
+                }
+                helperText={`Out of ${
+                  finalAiForm.numberOfQuestions * finalAiForm.marksPerQuestion
+                } (60% suggested)`}
+                fullWidth
+              />
+            </Stack>
+
+            <TextField
+              label="Additional Instructions (optional)"
+              value={finalAiForm.additionalInstructions}
+              onChange={(event) =>
+                setFinalAiForm((previous) => ({
+                  ...previous,
+                  additionalInstructions: event.target.value,
+                }))
+              }
+              placeholder="e.g. Include more scenario-based questions"
+              fullWidth
+              multiline
+              rows={2}
+            />
+
+            {finalAiSaving && (
+              <Alert severity="info" icon={<CircularProgress size={18} />}>
+                Generating questions for the whole course. This can take up to
+                a minute…
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setFinalAiDialogOpen(false)}
+            disabled={finalAiSaving}
+            color="inherit"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={() => void handleGenerateFinalQuiz()}
+            disabled={finalAiSaving}
+          >
+            {finalAiSaving ? 'Generating…' : 'Generate Final Quiz'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Manual Quiz Creation Dialog */}
       <Dialog
         open={dialogOpen}
@@ -1148,12 +1444,17 @@ export default function AdminQuizzesPage() {
                 labelId="manual-course-label"
                 label="Select Course"
                 value={form.courseId}
-                onChange={(event) =>
+                onChange={(event) => {
+                  const courseId = Number(event.target.value);
                   setForm((previous) => ({
                     ...previous,
-                    courseId: Number(event.target.value),
-                  }))
-                }
+                    courseId,
+                    lessonId: undefined,
+                  }));
+                  if (form.quizType === 'CHAPTER' && courseId) {
+                    void fetchLessons(courseId);
+                  }
+                }}
               >
                 <MenuItem value={0} disabled>Select a course</MenuItem>
                 {courses.map((course) => (
@@ -1161,6 +1462,64 @@ export default function AdminQuizzesPage() {
                 ))}
               </Select>
             </FormControl>
+
+            <FormControl fullWidth required>
+              <InputLabel id="manual-type-label">Quiz Type</InputLabel>
+              <Select
+                labelId="manual-type-label"
+                label="Quiz Type"
+                value={form.quizType ?? 'FINAL'}
+                onChange={(event) => {
+                  const quizType = event.target.value as 'FINAL' | 'CHAPTER';
+                  setForm((previous) => ({
+                    ...previous,
+                    quizType,
+                    lessonId: undefined,
+                  }));
+                  if (quizType === 'CHAPTER' && form.courseId) {
+                    void fetchLessons(form.courseId);
+                  }
+                }}
+              >
+                <MenuItem value="FINAL">
+                  Final assessment (passing it awards the certificate)
+                </MenuItem>
+                <MenuItem value="CHAPTER">Chapter quiz (practice)</MenuItem>
+              </Select>
+            </FormControl>
+
+            {form.quizType === 'FINAL' &&
+              form.courseId > 0 &&
+              courseHasFinalQuiz(form.courseId) && (
+                <Alert severity="warning">
+                  This course already has a final quiz. Students must pass
+                  every published final quiz to get the certificate.
+                </Alert>
+              )}
+
+            {form.quizType === 'CHAPTER' && (
+              <FormControl fullWidth required disabled={!form.courseId || lessonsLoading}>
+                <InputLabel id="manual-lesson-label">Lesson</InputLabel>
+                <Select<number>
+                  labelId="manual-lesson-label"
+                  label="Lesson"
+                  value={form.lessonId ?? 0}
+                  onChange={(event) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      lessonId: Number(event.target.value) || undefined,
+                    }))
+                  }
+                >
+                  <MenuItem value={0} disabled>
+                    {lessonsLoading ? 'Loading lessons…' : 'Select a lesson'}
+                  </MenuItem>
+                  {lessons.map((lesson) => (
+                    <MenuItem key={lesson.id} value={lesson.id}>{lesson.title}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
 
             <TextField
               label="Duration (minutes)"

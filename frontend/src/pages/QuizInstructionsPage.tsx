@@ -175,9 +175,23 @@ export default function QuizInstructionsPage() {
             ))}
           </Stack>
 
-          <Alert severity="info" sx={{ mt: 3 }}>
-            The quiz timer starts when you enter the quiz attempt page.
-          </Alert>
+          {quiz.quizType === 'FINAL' && !quiz.isLocked && (
+            <Alert severity="success" sx={{ mt: 3 }}>
+              This is the final quiz. Pass it to earn your course
+              certificate automatically.
+            </Alert>
+          )}
+
+          {quiz.isLocked ? (
+            <Alert severity="warning" sx={{ mt: 3 }}>
+              {quiz.lockedReason ||
+                'Complete all lessons in this course to unlock the final quiz.'}
+            </Alert>
+          ) : (
+            <Alert severity="info" sx={{ mt: 3 }}>
+              The quiz timer starts when you enter the quiz attempt page.
+            </Alert>
+          )}
 
           <Stack
             direction={{ xs: 'column-reverse', sm: 'row' }}
@@ -195,11 +209,12 @@ export default function QuizInstructionsPage() {
             <Button
               fullWidth
               variant="contained"
+              disabled={Boolean(quiz.isLocked)}
               onClick={() =>
                 navigate(`/student/quizzes/${quiz.id}`)
               }
             >
-              Start Quiz Now
+              {quiz.isLocked ? 'Locked' : 'Start Quiz Now'}
             </Button>
           </Stack>
         </CardContent>

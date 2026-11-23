@@ -25,6 +25,9 @@ import {
 } from '@mui/icons-material';
 
 import { getCourses, type Course } from '../api/courseApi';
+import CourseReviewsSection from '../components/CourseReviewsSection';
+import BookmarkButton from '../components/BookmarkButton';
+import CourseCompletionBanner from '../components/CourseCompletionBanner';
 import { getLessonsByCourse, type Lesson } from '../api/lessonApi';
 
 import {
@@ -270,12 +273,19 @@ function CourseDetailsPage() {
 
   return (
     <Box maxWidth={1000} mx="auto" p={{ xs: 2, md: 4 }}>
-      <Button
-        onClick={() => navigate('/student')}
-        sx={{ mb: 2 }}
+      <Stack
+        direction="row"
+        sx={{ mb: 2, justifyContent: 'space-between', alignItems: 'center' }}
       >
-        ← Back to Dashboard
-      </Button>
+        <Button onClick={() => navigate('/student')}>
+          ← Back to Dashboard
+        </Button>
+
+        <BookmarkButton courseId={course.id} />
+      </Stack>
+
+      {/* After the last lesson: take the final quiz → certificate. */}
+      <CourseCompletionBanner courseId={course.id} />
 
       <Paper
         elevation={2}
@@ -472,6 +482,10 @@ function CourseDetailsPage() {
             })}
           </List>
         )}
+
+        <Divider sx={{ my: 4 }} />
+
+        <CourseReviewsSection courseId={course.id} />
       </Paper>
     </Box>
   );

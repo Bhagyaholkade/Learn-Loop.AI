@@ -12,7 +12,6 @@ import {
   Snackbar,
   Alert,
   Stack,
-  Switch,
   Tab,
   Tabs,
   ToggleButton,
@@ -459,53 +458,29 @@ export default function StudentSettingsPanel({
 
         {tab === 1 && (
           <Box>
+            {/* Reminders and summaries are not sent by the backend yet, so
+                they are shown as "Coming soon" instead of working toggles. */}
+            <Alert severity="info" sx={{ m: 2, mb: 1 }}>
+              Reminders and weekly summaries are coming soon. They are not
+              sent yet.
+            </Alert>
             <SettingRow
               icon={<NotificationsActiveRoundedIcon />}
               title="Course reminders"
               description="Remind me to continue my enrolled courses"
-              action={
-                <Switch
-                  checked={prefs.courseReminders}
-                  onChange={(e) =>
-                    updatePrefs(
-                      { courseReminders: e.target.checked },
-                      `Course reminders ${e.target.checked ? 'on' : 'off'}`,
-                    )
-                  }
-                />
-              }
+              action={<Chip label="Coming soon" size="small" />}
             />
             <SettingRow
               icon={<QuizRoundedIcon />}
               title="Quiz reminders"
               description="Remind me about quizzes I haven't attempted"
-              action={
-                <Switch
-                  checked={prefs.quizReminders}
-                  onChange={(e) =>
-                    updatePrefs(
-                      { quizReminders: e.target.checked },
-                      `Quiz reminders ${e.target.checked ? 'on' : 'off'}`,
-                    )
-                  }
-                />
-              }
+              action={<Chip label="Coming soon" size="small" />}
             />
             <SettingRow
               icon={<EventRepeatRoundedIcon />}
               title="Weekly summary"
               description="Show a weekly recap of my learning progress"
-              action={
-                <Switch
-                  checked={prefs.weeklySummary}
-                  onChange={(e) =>
-                    updatePrefs(
-                      { weeklySummary: e.target.checked },
-                      `Weekly summary ${e.target.checked ? 'on' : 'off'}`,
-                    )
-                  }
-                />
-              }
+              action={<Chip label="Coming soon" size="small" />}
             />
 
             <Box sx={{ p: 2 }}>
@@ -528,6 +503,7 @@ export default function StudentSettingsPanel({
                   <Typography sx={{ fontWeight: 700 }}>Weekly learning goal</Typography>
                   <Typography variant="body2" color="text.secondary">
                     How many lessons do you want to complete each week?
+                    Saved on this device only.
                   </Typography>
                 </Box>
               </Stack>

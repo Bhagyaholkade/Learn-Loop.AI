@@ -26,6 +26,7 @@ import ManageStudentsPage from './pages/ManageStudentsPage';
 import ManageCoursesPage from './pages/ManageCoursesPage';
 import ManageEnrollmentsPage from './pages/ManageEnrollmentsPage';
 import ManageLessonsPage from './pages/ManageLessonsPage';
+import ManageChaptersPage from './pages/ManageChaptersPage';
 import AdminProgressPage from './pages/AdminProgressPage';
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
 import AdminQuizzesPage from './pages/AdminQuizzesPage';
@@ -38,6 +39,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 
 // AI Course Creator
 import AiCourseCreatorPage from './pages/AiCourseCreatorPage';
+import AiAssistantPage from './pages/AiAssistantPage';
 
 function App() {
   return (
@@ -134,6 +136,11 @@ function App() {
           />
 
           <Route
+            path="/admin/chapters"
+            element={<ManageChaptersPage />}
+          />
+
+          <Route
             path="/admin/quizzes"
             element={<AdminQuizzesPage />}
           />
@@ -163,6 +170,11 @@ function App() {
             element={<AdminQuizAttemptsPage />}
           />
         </Route>
+
+        <Route
+  path="/student/ai-assistant"
+  element={<AiAssistantPage />}
+/>
 
         {/* Default Route */}
         <Route

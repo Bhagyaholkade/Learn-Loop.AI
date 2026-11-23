@@ -20,6 +20,7 @@ import {
   AssessmentRounded as AssessmentRoundedIcon,
   AutoAwesomeRounded as AutoAwesomeRoundedIcon,
   AutoStoriesRounded as AutoStoriesRoundedIcon,
+  LibraryBooksRounded as LibraryBooksRoundedIcon,
   DashboardRounded as DashboardRoundedIcon,
   FactCheckRounded as FactCheckRoundedIcon,
   MenuBookRounded as MenuBookRoundedIcon,
@@ -69,6 +70,7 @@ const theme = createTheme(appThemeOptions, {
 interface Statistics {
   students: number | null;
   courses: number | null;
+  enrollments: number | null;
 }
 
 interface ApiListResponse {
@@ -126,6 +128,7 @@ export default function AdminDashboard() {
   const [statistics, setStatistics] = useState<Statistics>({
     students: null,
     courses: null,
+    enrollments: null,
   });
 
   const [loading, setLoading] = useState(true);
@@ -140,7 +143,8 @@ export default function AdminDashboard() {
     setError(null);
 
     try {
-      const [studentsResponse, coursesResponse] = await Promise.all([
+      const [studentsResponse, coursesResponse, enrollmentsResponse] =
+        await Promise.all([
         api.get<unknown>('/students', {
           params: {
             page: 1,
@@ -154,11 +158,15 @@ export default function AdminDashboard() {
             limit: 1,
           },
         }),
+
+        // Admin-only list of all enrollments (returns an array).
+        api.get<unknown>('/enrollments'),
       ]);
 
       setStatistics({
         students: getTotal(studentsResponse.data),
         courses: getTotal(coursesResponse.data),
+        enrollments: getTotal(enrollmentsResponse.data),
       });
     } catch (err: unknown) {
       console.error('Failed to load admin statistics:', err);
@@ -196,7 +204,7 @@ export default function AdminDashboard() {
     },
     {
       title: 'Enrollments',
-      value: null,
+      value: statistics.enrollments,
       icon: <SchoolRoundedIcon />,
       tint: '#EAF7F0',
       color: '#1E9E63',
@@ -225,6 +233,12 @@ export default function AdminDashboard() {
       description: 'Assign students to courses',
       icon: <SchoolRoundedIcon />,
       to: '/admin/enrollments',
+    },
+    {
+      label: 'Manage Chapters',
+      description: 'Group lessons into course chapters',
+      icon: <LibraryBooksRoundedIcon />,
+      to: '/admin/chapters',
     },
     {
       label: 'Manage Lessons',

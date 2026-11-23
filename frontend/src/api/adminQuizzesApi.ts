@@ -95,6 +95,28 @@ export const generateAiQuiz = async (
   return response.data;
 };
 
+export interface GenerateAiFinalQuizData {
+  courseId: number;
+  title?: string;
+  numberOfQuestions: number;
+  marksPerQuestion: number;
+  durationMinutes?: number;
+  passingMarks?: number;
+  additionalInstructions?: string;
+}
+
+// Generate an AI final quiz covering the whole course
+// (passing it awards the course certificate).
+export const generateAiFinalQuiz = async (
+  data: GenerateAiFinalQuizData,
+): Promise<{ success: boolean; message: string; data: { quizId: number; title: string } }> => {
+  const response = await api.post('/ai-quiz/generate-final', data, {
+    // Whole-course generation can take longer than the default timeout.
+    timeout: 180_000,
+  });
+  return response.data;
+};
+
 // Approve an AI-generated quiz
 export const approveQuiz = async (
   quizId: number,

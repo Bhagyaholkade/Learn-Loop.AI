@@ -15,6 +15,10 @@ export interface Quiz {
   durationMinutes: number;
   totalMarks: number;
   passingMarks?: number;
+  quizType?: 'CHAPTER' | 'FINAL';
+  /** Final quizzes stay locked until every lesson in the course is done. */
+  isLocked?: boolean;
+  lockedReason?: string | null;
   course: QuizCourse;
 }
 
@@ -64,6 +68,10 @@ export interface QuizResult {
   percentage: number;
   isPassed: boolean;
   submittedAt: string;
+  quizType?: 'CHAPTER' | 'FINAL';
+  courseId?: number;
+  /** Set when passing this (final) quiz issued the course certificate. */
+  certificate?: { id: number; certificateNumber: string } | null;
   questionReview?: QuestionReview[];
 }
 

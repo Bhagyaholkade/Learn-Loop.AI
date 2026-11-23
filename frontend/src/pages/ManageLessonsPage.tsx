@@ -33,12 +33,14 @@ import {
   type Lesson,
   type CreateLessonPayload,
 } from '../api/lessonApi';
+import { getChaptersByCourse, type Chapter } from '../api/chapterApi';
 
 const ManageLessonsPage = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<number | ''>('');
 
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -104,8 +106,15 @@ const ManageLessonsPage = () => {
   useEffect(() => {
     if (selectedCourseId !== '') {
       void loadLessons(selectedCourseId);
+
+      getChaptersByCourse(selectedCourseId)
+        .then((data) =>
+          setChapters([...data].sort((a, b) => a.order - b.order)),
+        )
+        .catch(() => setChapters([]));
     } else {
       setLessons([]);
+      setChapters([]);
     }
   }, [selectedCourseId]);
 
@@ -131,6 +140,7 @@ const ManageLessonsPage = () => {
       title: lesson.title,
       content: lesson.content ?? '',
       courseId: lesson.course.id,
+      chapterId: lesson.chapter?.id,
       order: lesson.order,
     });
 
@@ -308,6 +318,12 @@ const ManageLessonsPage = () => {
                       {lesson.title}
                     </Typography>
 
+                    <Typography variant="caption" color="primary">
+                      {lesson.chapter
+                        ? `Chapter ${lesson.chapter.order}: ${lesson.chapter.title}`
+                        : 'No chapter'}
+                    </Typography>
+
                     <Typography
                       variant="body2"
                       color="text.secondary"
@@ -369,6 +385,36 @@ const ManageLessonsPage = () => {
               }
               required
             />
+
+            <TextField
+              select
+              fullWidth
+              label="Chapter"
+              value={form.chapterId ?? ''}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  chapterId:
+                    event.target.value === ''
+                      ? undefined
+                      : Number(event.target.value),
+                })
+              }
+              helperText={
+                chapters.length === 0
+                  ? 'This course has no chapters yet. Create them in Manage Chapters.'
+                  : undefined
+              }
+            >
+              <MenuItem value="" disabled={Boolean(editingLesson?.chapter)}>
+                <em>No chapter</em>
+              </MenuItem>
+              {chapters.map((chapter) => (
+                <MenuItem key={chapter.id} value={chapter.id}>
+                  Chapter {chapter.order}: {chapter.title}
+                </MenuItem>
+              ))}
+            </TextField>
 
             <TextField
               fullWidth

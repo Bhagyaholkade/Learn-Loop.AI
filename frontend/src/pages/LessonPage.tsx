@@ -40,6 +40,8 @@ import {
   getMyProgress,
   markLessonCompleted,
 } from '../api/progressApi';
+import BookmarkButton from '../components/BookmarkButton';
+import CourseCompletionBanner from '../components/CourseCompletionBanner';
 
 function getYouTubeEmbedUrl(url: string): string | null {
   try {
@@ -286,13 +288,19 @@ function LessonPage() {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Button
-        startIcon={<ArrowBackRoundedIcon />}
-        onClick={() => navigate(`/student/courses/${lesson.course.id}`)}
-        sx={{ mb: 3 }}
+      <Stack
+        direction="row"
+        sx={{ mb: 3, justifyContent: 'space-between', alignItems: 'center' }}
       >
-        Back to course
-      </Button>
+        <Button
+          startIcon={<ArrowBackRoundedIcon />}
+          onClick={() => navigate(`/student/courses/${lesson.course.id}`)}
+        >
+          Back to course
+        </Button>
+
+        <BookmarkButton courseId={lesson.course.id} />
+      </Stack>
 
       <Paper
         elevation={2}
@@ -846,6 +854,14 @@ function LessonPage() {
           </Button>
         </Stack>
       </Paper>
+
+      {/* After the last lesson: take the final quiz → certificate. */}
+      <Box sx={{ mt: 3 }}>
+        <CourseCompletionBanner
+          courseId={lesson.course.id}
+          refreshKey={isCompleted}
+        />
+      </Box>
     </Container>
   );
 }
