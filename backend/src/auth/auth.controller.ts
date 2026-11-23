@@ -7,6 +7,8 @@ import {
   Query,
 } from '@nestjs/common';
 
+import { Throttle } from '@nestjs/throttler';
+
 import { AuthService } from './auth.service';
 
 import { SignupDto } from './dto/signup.dto';
@@ -27,6 +29,8 @@ export class AuthController {
   // POST /api/v1/auth/send-registration-otp
   // ------------------------------------------
 
+  // Sends an email: max 5 per 10 minutes per IP.
+  @Throttle({ default: { limit: 5, ttl: 600000 } })
   @Post('send-registration-otp')
   sendRegistrationOtp(
     @Body() dto: SendRegistrationOtpDto,
@@ -39,6 +43,7 @@ export class AuthController {
   // POST /api/v1/auth/verify-registration-otp
   // ------------------------------------------
 
+  @Throttle({ default: { limit: 10, ttl: 600000 } })
   @Post('verify-registration-otp')
   verifyRegistrationOtp(
     @Body() dto: VerifyRegistrationOtpDto,
@@ -51,6 +56,7 @@ export class AuthController {
   // POST /api/v1/auth/signup
   // ------------------------------------------
 
+  @Throttle({ default: { limit: 10, ttl: 600000 } })
   @Post('signup')
   signup(@Body() signupDto: SignupDto) {
     return this.authService.signup(signupDto);
@@ -71,6 +77,8 @@ export class AuthController {
   // POST /api/v1/auth/login
   // ------------------------------------------
 
+  // Slows down password guessing: max 10 attempts per minute per IP.
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('login')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
@@ -81,6 +89,8 @@ export class AuthController {
   // POST /api/v1/auth/forgot-password
   // ------------------------------------------
 
+  // Sends an email: max 5 per 10 minutes per IP.
+  @Throttle({ default: { limit: 5, ttl: 600000 } })
   @Post('forgot-password')
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
@@ -91,6 +101,7 @@ export class AuthController {
   // POST /api/v1/auth/reset-password
   // ------------------------------------------
 
+  @Throttle({ default: { limit: 10, ttl: 600000 } })
   @Post('reset-password')
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);

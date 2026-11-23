@@ -1,4 +1,5 @@
 
+import { Throttle } from '@nestjs/throttler';
 import {
   Body,
   Controller,
@@ -42,6 +43,8 @@ interface AuthenticatedRequest {
 
 @ApiTags('AI Course Creator')
 @ApiBearerAuth('bearer')
+// AI generation is expensive: max 15 requests per minute per IP.
+@Throttle({ default: { limit: 15, ttl: 60000 } })
 @Controller('ai-course')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)

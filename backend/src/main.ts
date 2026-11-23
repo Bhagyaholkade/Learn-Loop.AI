@@ -1,5 +1,6 @@
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import helmet from 'helmet';
 import {
   DocumentBuilder,
   SwaggerModule,
@@ -13,6 +14,10 @@ async function bootstrap(): Promise<void> {
 
   try {
     const app = await NestFactory.create(AppModule);
+
+    // Security headers. CSP is off because this is a JSON API and
+    // Swagger UI needs inline scripts.
+    app.use(helmet({ contentSecurityPolicy: false }));
 
     // 1. Global API prefix
     app.setGlobalPrefix('api/v1');
