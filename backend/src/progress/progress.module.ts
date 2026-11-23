@@ -7,10 +7,12 @@ import { Progress } from './entities/progress.entity';
 import { User } from '../users/entities/user.entity';
 import { Lesson } from '../lessons/entities/lesson.entity';
 import { Enrollment } from '../enrollments/entities/enrollment.entity';
+import { CertificatesModule } from '../certificates/certificates.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Progress, User, Lesson, Enrollment]),
+    CertificatesModule,
   ],
   controllers: [ProgressController],
   providers: [ProgressService],

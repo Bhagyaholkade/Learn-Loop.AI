@@ -18,12 +18,15 @@ import {
 
 import { LessonsService } from './lessons.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { UpdateLessonDto } from './dto/update-lesson.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('lessons')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth('bearer')
 export class LessonsController {
   constructor(
@@ -31,6 +34,7 @@ export class LessonsController {
   ) {}
 
   @Post()
+  @Roles(UserRole.ADMIN)
   create(@Body() data: CreateLessonDto) {
     return this.lessonsService.create(data);
   }
@@ -56,6 +60,7 @@ findAll(@Query('courseId') courseId?: string) {
   }
 
   @Patch(':id')
+  @Roles(UserRole.ADMIN)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() data: UpdateLessonDto,
@@ -64,6 +69,7 @@ findAll(@Query('courseId') courseId?: string) {
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.lessonsService.remove(id);

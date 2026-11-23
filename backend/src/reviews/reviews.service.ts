@@ -103,9 +103,19 @@ export class ReviewsService {
       throw new NotFoundException('Course not found');
     }
 
+    // This endpoint is public: only expose the reviewer's id and name,
+    // never their email or account fields.
     return this.reviewRepository.find({
       where: { course: { id: courseId } },
       relations: { student: true },
+      select: {
+        id: true,
+        rating: true,
+        comment: true,
+        createdAt: true,
+        updatedAt: true,
+        student: { id: true, name: true },
+      },
       order: { createdAt: 'DESC' },
     });
   }

@@ -2,6 +2,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 // Core application
 import { AppController } from './app.controller';
@@ -47,6 +49,10 @@ import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
       }),
     }),
 
+    // Rate limiting: 120 requests per minute per IP by default.
+    // Stricter limits are set per route with @Throttle().
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
+
     // Application feature modules
     StudentsModule,
     AuthModule,
@@ -60,16 +66,15 @@ import { AiAssistantModule } from './ai-assistant/ai-assistant.module';
     QuizzesModule,
     CertificatesModule,
     AiQuizModule,
-    AiQuizModule,
     AiCourseModule,
     ChaptersModule,
-    AiQuizModule,
-    AiCourseModule,
     AiAssistantModule,
-    ChaptersModule,
   ],
 
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

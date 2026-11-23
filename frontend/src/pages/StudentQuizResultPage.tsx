@@ -18,6 +18,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 
 import {
   CheckCircleRounded,
@@ -209,6 +210,65 @@ export default function StudentQuizResultPage() {
     >
       <Container maxWidth="md">
         <Stack spacing={3}>
+          {/* Certificate earned by passing the final quiz */}
+          {result.certificate && (
+            <Paper
+              elevation={0}
+              sx={{
+                p: { xs: 2.5, sm: 3 },
+                borderRadius: 4,
+                border: '2px solid',
+                borderColor: 'success.main',
+                bgcolor: (theme) => alpha(theme.palette.success.main, 0.08),
+                textAlign: 'center',
+              }}
+            >
+              <EmojiEventsRounded
+                sx={{ fontSize: 48, color: 'warning.main' }}
+              />
+              <Typography variant="h5" fontWeight={800} sx={{ mt: 1 }}>
+                Certificate earned! 🎉
+              </Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+                You completed the course and passed the final quiz. Your
+                certificate ({result.certificate.certificateNumber}) is
+                ready.
+              </Typography>
+              <Button
+                variant="contained"
+                color="success"
+                sx={{ mt: 2 }}
+                onClick={() =>
+                  navigate('/student', { state: { page: 'My Certificates' } })
+                }
+              >
+                View my certificate
+              </Button>
+            </Paper>
+          )}
+
+          {/* Failed final quiz: encourage a retry */}
+          {!passed && result.quizType === 'FINAL' && (
+            <Alert
+              severity="warning"
+              sx={{ borderRadius: 3 }}
+              action={
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={() =>
+                    navigate(`/student/quizzes/${result.quizId}/instructions`)
+                  }
+                >
+                  Retry
+                </Button>
+              }
+            >
+              You need {result.passingMarks} marks to pass the final quiz and
+              earn your certificate. Review the lessons and try again.
+            </Alert>
+          )}
+
           {/* Result Header */}
           <Box textAlign="center" sx={{ py: 2 }}>
             <Avatar

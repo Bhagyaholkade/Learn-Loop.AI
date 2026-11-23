@@ -22,4 +22,29 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// When a logged-in request comes back 401, the token has expired or is
+// invalid: clear the stored session and send the user to the login page.
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const hadToken = Boolean(error?.config?.headers?.Authorization);
+    const url: string = error?.config?.url ?? '';
+    const isAuthRequest = url.includes('/auth/');
+
+    if (status === 401 && hadToken && !isAuthRequest) {
+      for (const storage of [localStorage, sessionStorage]) {
+        storage.removeItem('accessToken');
+        storage.removeItem('user');
+      }
+
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.replace('/login?expired=1');
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
+
 export default api;

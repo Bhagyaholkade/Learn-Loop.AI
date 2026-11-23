@@ -49,6 +49,12 @@ export interface Lesson {
     title: string;
   };
 
+  chapter?: {
+    id: number;
+    title: string;
+    order: number;
+  } | null;
+
   createdAt?: string;
   updatedAt?: string;
 }
@@ -58,6 +64,7 @@ export interface CreateLessonPayload {
   title: string;
   content?: string;
   courseId: number;
+  chapterId?: number;
   order: number;
 
   videoUrl?: string;
@@ -71,6 +78,7 @@ export interface UpdateLessonPayload {
   title?: string;
   content?: string | null;
   courseId?: number;
+  chapterId?: number;
   order?: number;
 
   videoUrl?: string | null;

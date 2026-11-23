@@ -1,4 +1,5 @@
 
+import { Throttle } from '@nestjs/throttler';
 import {
   Body,
   Controller,
@@ -22,9 +23,12 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { GenerateAllChapterQuizzesDto } from './dto/generate-all-chapter-quizzes.dto';
+import { GenerateFinalQuizDto } from './dto/generate-final-quiz.dto';
 
 @ApiTags('AI Quiz')
 @ApiBearerAuth('bearer')
+// AI generation is expensive: max 15 requests per minute per IP.
+@Throttle({ default: { limit: 15, ttl: 60000 } })
 @Controller('ai-quiz')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -63,5 +67,11 @@ async generateAllChapterQuizzes(
 ) {
   return this.aiQuizService.generateAllChapterQuizzes(dto);
 }
+
+  // 4. Generate an AI final quiz covering the whole course
+  @Post('generate-final')
+  async generateFinalQuiz(@Body() dto: GenerateFinalQuizDto) {
+    return this.aiQuizService.generateFinalQuiz(dto);
+  }
 
 }

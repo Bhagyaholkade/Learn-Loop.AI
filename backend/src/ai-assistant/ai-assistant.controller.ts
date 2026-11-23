@@ -1,4 +1,5 @@
 
+import { Throttle } from '@nestjs/throttler';
 import {
   Body,
   Controller,
@@ -65,6 +66,7 @@ export class AiAssistantController {
    * - Supports general technical and educational questions.
    */
   @Post('chat')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({
     summary: 'Chat with LearnLoop AI',
     description:
@@ -102,6 +104,7 @@ export class AiAssistantController {
    * - error: Generation failed.
    */
   @Post('chat/stream')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({
     summary: 'Stream AI chat response',
     description:

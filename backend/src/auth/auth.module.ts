@@ -32,7 +32,11 @@ import { EmailModule } from '../email/email.module';
 
         return {
           secret,
-          signOptions: { expiresIn: '15m' },
+          signOptions: {
+            // e.g. '15m', '12h', '1d'. Default 1 day until refresh tokens exist.
+            expiresIn: (configService.get<string>('JWT_EXPIRES_IN') ||
+              '1d') as `${number}${'s' | 'm' | 'h' | 'd'}`,
+          },
         };
       },
     }),

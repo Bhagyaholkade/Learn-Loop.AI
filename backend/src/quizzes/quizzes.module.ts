@@ -13,6 +13,7 @@ import { QuizzesService } from './quizzes.service';
 import { QuizzesController } from './quizzes.controller';
 import { StudentQuizzesController } from './student-quizzes.controller';
 import { Chapter } from '../chapters/entities/chapter.entity';
+import { CertificatesModule } from '../certificates/certificates.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { Chapter } from '../chapters/entities/chapter.entity';
   Enrollment,
   Chapter,
 ]),
+    CertificatesModule,
   ],
   controllers: [
     QuizzesController,

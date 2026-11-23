@@ -26,6 +26,7 @@ import ManageStudentsPage from './pages/ManageStudentsPage';
 import ManageCoursesPage from './pages/ManageCoursesPage';
 import ManageEnrollmentsPage from './pages/ManageEnrollmentsPage';
 import ManageLessonsPage from './pages/ManageLessonsPage';
+import ManageChaptersPage from './pages/ManageChaptersPage';
 import AdminProgressPage from './pages/AdminProgressPage';
 import AdminAnalyticsPage from './pages/AdminAnalyticsPage';
 import AdminQuizzesPage from './pages/AdminQuizzesPage';
@@ -132,6 +133,11 @@ function App() {
           <Route
             path="/admin/lessons"
             element={<ManageLessonsPage />}
+          />
+
+          <Route
+            path="/admin/chapters"
+            element={<ManageChaptersPage />}
           />
 
           <Route
