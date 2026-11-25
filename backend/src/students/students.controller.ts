@@ -19,8 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
-import { StudentsService } from './students.service';
-import { Student } from './entities/student.entity/student.entity';
+import { StudentsService, StudentView } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 
@@ -32,7 +31,9 @@ import { UserRole } from '../users/entities/user.entity';
 @ApiTags('Students')
 @ApiBearerAuth('bearer')
 @Controller('students')
-@UseGuards(JwtAuthGuard)
+// Every route exposes or changes real user accounts, so all are admin-only.
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN)
 export class StudentsController {
   constructor(
     private readonly studentsService: StudentsService,
@@ -41,8 +42,6 @@ export class StudentsController {
   // GET: Test admin access
   @Get('admin-test')
   @ApiOperation({ summary: 'Test admin access' })
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
   adminTest() {
     return {
       message: 'Welcome, admin!',
@@ -52,7 +51,7 @@ export class StudentsController {
   // GET: Retrieve students with pagination, search, and sorting
   @Get()
   @ApiOperation({
-    summary: 'Get students with pagination and filters',
+    summary: 'Get students with pagination and filters (Admin only)',
   })
   @ApiQuery({
     name: 'page',
@@ -115,33 +114,29 @@ export class StudentsController {
 
   // POST: Create a student (Admin only)
   @Post()
-  @ApiOperation({ summary: 'Create a student (Admin only)' })
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Create a student account with a temporary password (Admin only)' })
   create(
     @Body() createStudentDto: CreateStudentDto,
-  ): Promise<Student> {
+  ): Promise<StudentView> {
     return this.studentsService.create(createStudentDto);
   }
 
   // GET: Retrieve one student by ID
   @Get(':id')
-  @ApiOperation({ summary: 'Get a student by ID' })
+  @ApiOperation({ summary: 'Get a student by ID (Admin only)' })
   findOne(
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<Student> {
+  ): Promise<StudentView> {
     return this.studentsService.findOne(id);
   }
 
   // PATCH: Update a student (Admin only)
   @Patch(':id')
   @ApiOperation({ summary: 'Update a student (Admin only)' })
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateStudentDto: UpdateStudentDto,
-  ): Promise<Student> {
+  ): Promise<StudentView> {
     return this.studentsService.update(
       id,
       updateStudentDto,
@@ -151,8 +146,6 @@ export class StudentsController {
   // DELETE: Delete a student (Admin only)
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a student (Admin only)' })
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
   remove(
     @Param('id', ParseIntPipe) id: number,
   ) {
